@@ -183,7 +183,7 @@ char *tempstr=NULL;
     }
 [a-m]\+  {
   // waiting for a cleaner solution...
-	snprintf(tempstr,70, "\\gremanualcusto{%c}",gabc_notes_determination_text[0]);
+	snprintf(tempstr,18, "\\gremanualcusto{%c}",gabc_notes_determination_text[0]);
 	gregorio_add_texverb_as_note(&current_note, strdup(tempstr), GRE_TEXVERB_ELEMENT);
     }
 [\t\r\n]+      /* ignore ends of line and tabs */;

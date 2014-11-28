@@ -475,6 +475,8 @@ gregorio_free_notes (gregorio_note ** note)
   while (*note)
     {
       tmp = (*note)->next;
+      free((*note)->texverb);
+      free((*note)->choral_sign);
       free (*note);
       *note = tmp;
     }
@@ -585,6 +587,7 @@ gregorio_free_glyphs (gregorio_glyph ** glyph)
   while (*glyph)
     {
       next_glyph = (*glyph)->next;
+      free((*glyph)->texverb);
       gregorio_free_notes (&(*glyph)->first_note);
       free (*glyph);
       *glyph = next_glyph;
@@ -610,6 +613,8 @@ gregorio_add_element (gregorio_element ** current_element,
   next->previous = *current_element;
   next->next = NULL;
   next->texverb = NULL;
+  next->nabc = NULL;
+  next->nabc_lines = 0;
   if (*current_element)
     {
       (*current_element)->next = next;
@@ -635,6 +640,8 @@ gregorio_add_special_as_element (gregorio_element ** current_element,
   special->first_glyph = NULL;
   special->next = NULL;
   special->texverb = texverb;
+  special->nabc = NULL;
+  special->nabc_lines = 0;
   special->previous = *current_element;
   if (*current_element)
     {
@@ -647,14 +654,18 @@ gregorio_add_special_as_element (gregorio_element ** current_element,
 void
 gregorio_free_one_element (gregorio_element ** element)
 {
+  size_t i;
   gregorio_element *next;
   if (!element || !*element)
     {
       return;
     }
   free((*element)->texverb);
-  next = (*element)->next;
   gregorio_free_glyphs (&(*element)->first_glyph);
+  for (i = 0; i < (*element)->nabc_lines; i++) {
+    free((*element)->nabc[i]);
+  }
+  next = (*element)->next;
   free (*element);
   *element = next;
 }
@@ -663,6 +674,7 @@ gregorio_free_one_element (gregorio_element ** element)
 void
 gregorio_free_elements (gregorio_element ** element)
 {
+  size_t i;
   gregorio_element *next;
   if (!element || !*element)
     {
@@ -672,6 +684,10 @@ gregorio_free_elements (gregorio_element ** element)
     {
       next = (*element)->next;
       gregorio_free_glyphs (&(*element)->first_glyph);
+      for (i = 0; i < (*element)->nabc_lines; i++) {
+        free((*element)->nabc[i]);
+      }
+      free((*element)->texverb);
       free (*element);
       *element = next;
     }
@@ -942,6 +958,7 @@ gregorio_new_score (void)
   new_score->musixtex_preamble = NULL;
   new_score->first_voice_info = NULL;
   new_score->mode=0;
+  new_score->nabc_lines=0;
   new_score->gregoriotex_font = NULL;
   new_score->user_notes = NULL;
   return new_score;

@@ -496,6 +496,7 @@ gregorio_set_translation_center_beginning(gregorio_syllable *current_syllable)
 void
 close_syllable ()
 {
+  int i;
   // we rebuild the first syllable text if it is the first syllable, or if it is the second when the first has no text.
   // it is a patch for cases like (c4) Al(ab)le(ab)
   if ((!score -> first_syllable && score->initial_style != NO_INITIAL && first_text_character)
@@ -530,6 +531,9 @@ close_syllable ()
   translation_type=TR_NORMAL;
   no_linebreak_area = NLBA_NORMAL;
   abovelinestext = NULL;
+  for (i = 0; i < number_of_voices; i++) {
+    elements[i] = NULL;
+  }
 }
 
 // a function called when we see a [, basically, all characters are added to the translation pointer instead of the text pointer
@@ -603,9 +607,45 @@ gregorio_gabc_end_style(unsigned char style)
   gregorio_end_style(&current_character, style);
 }
 
+unsigned char nabc_state = 0;
+size_t nabc_lines = 0;
+
+void
+gabc_y_add_notes(char *notes) {
+   gregorio_element *new_elements;
+   gregorio_element *last_element;
+   size_t i;
+   if (nabc_state == 0) {
+      if (!elements[voice]) {
+	      elements[voice]=gabc_det_elements_from_string(notes, &current_key, macros);
+	   } else {
+	      new_elements = gabc_det_elements_from_string(notes, &current_key, macros);
+	      last_element = elements[voice];
+	      while(last_element->next) {
+	         last_element = last_element->next;
+	      }
+	      last_element->next = new_elements;
+	      new_elements->previous = last_element;
+	   }
+	} else {
+	   if (!elements[voice]) {
+   	   gregorio_add_element(&elements[voice], NULL);
+   	}
+   	if (!elements[voice]->nabc) {
+   	  elements[voice]->nabc = (char **) malloc (nabc_lines * sizeof (char *));
+        for (i = 0; i < nabc_lines; i++)
+          {
+            elements[voice]->nabc[i] = NULL;
+          }
+        elements[voice]->nabc_lines = nabc_lines;
+   	}
+	   elements[voice]->nabc[nabc_state] = strdup(notes);
+	}
+}
+
 %}
 
-%token ATTRIBUTE COLON SEMICOLON OFFICE_PART ANNOTATION AUTHOR DATE MANUSCRIPT MANUSCRIPT_REFERENCE MANUSCRIPT_STORAGE_PLACE TRANSCRIBER TRANSCRIPTION_DATE BOOK STYLE VIRGULA_POSITION LILYPOND_PREAMBLE OPUSTEX_PREAMBLE MUSIXTEX_PREAMBLE INITIAL_STYLE MODE GREGORIOTEX_FONT GENERATED_BY NAME OPENING_BRACKET NOTES VOICE_CUT CLOSING_BRACKET NUMBER_OF_VOICES VOICE_CHANGE END_OF_DEFINITIONS SPACE CHARACTERS I_BEGINNING I_END TT_BEGINNING TT_END UL_BEGINNING UL_END C_BEGINNING C_END B_BEGINNING B_END SC_BEGINNING SC_END SP_BEGINNING SP_END VERB_BEGINNING VERB VERB_END CENTER_BEGINNING CENTER_END CLOSING_BRACKET_WITH_SPACE TRANSLATION_BEGINNING TRANSLATION_END GABC_COPYRIGHT SCORE_COPYRIGHT OCCASION METER COMMENTARY ARRANGER GABC_VERSION USER_NOTES DEF_MACRO ALT_BEGIN ALT_END CENTERING_SCHEME TRANSLATION_CENTER_END BNLBA ENLBA
+%token ATTRIBUTE COLON SEMICOLON OFFICE_PART ANNOTATION AUTHOR DATE MANUSCRIPT MANUSCRIPT_REFERENCE MANUSCRIPT_STORAGE_PLACE TRANSCRIBER TRANSCRIPTION_DATE BOOK STYLE VIRGULA_POSITION LILYPOND_PREAMBLE OPUSTEX_PREAMBLE MUSIXTEX_PREAMBLE INITIAL_STYLE MODE GREGORIOTEX_FONT GENERATED_BY NAME OPENING_BRACKET NOTES VOICE_CUT CLOSING_BRACKET NUMBER_OF_VOICES VOICE_CHANGE END_OF_DEFINITIONS SPACE CHARACTERS I_BEGINNING I_END TT_BEGINNING TT_END UL_BEGINNING UL_END C_BEGINNING C_END B_BEGINNING B_END SC_BEGINNING SC_END SP_BEGINNING SP_END VERB_BEGINNING VERB VERB_END CENTER_BEGINNING CENTER_END CLOSING_BRACKET_WITH_SPACE TRANSLATION_BEGINNING TRANSLATION_END GABC_COPYRIGHT SCORE_COPYRIGHT OCCASION METER COMMENTARY ARRANGER GABC_VERSION USER_NOTES DEF_MACRO ALT_BEGIN ALT_END CENTERING_SCHEME TRANSLATION_CENTER_END BNLBA ENLBA NABC_CUT NABC_LINES
 
 %%
 
@@ -776,6 +816,20 @@ mode_definition:
 	if ($2)
 	  {
 	    score->mode=atoi($2);
+	    free($2);
+	  }
+	}
+	;
+	
+nabc_lines_definition:
+	NABC_LINES attribute {
+	if (score->nabc_lines) {
+	gregorio_message(_("several nabc lines definitions found, only the last will be taken into consideration"), "det_score",WARNING,0);
+	}
+	if ($2)
+	  {
+	    score->nabc_lines=atoi($2);
+	    nabc_lines = atoi($2);
 	    free($2);
 	  }
 	}
@@ -960,6 +1014,8 @@ definition:
 	|
 	book_definition
 	|
+	nabc_lines_definition
+	|
 	date_definition
 	|
 	author_definition
@@ -1000,7 +1056,7 @@ notes:
 note:
 	NOTES CLOSING_BRACKET {
 	if (voice<number_of_voices) {
-	elements[voice]=gabc_det_elements_from_string($1, &current_key, macros);
+   gabc_y_add_notes($1);
 	free($1);
 	}
 	else {
@@ -1013,11 +1069,12 @@ note:
 	complete_with_nulls(voice);
 	}
 	voice=0;
+	nabc_state = 0;
 	}
 	|
 	NOTES CLOSING_BRACKET_WITH_SPACE {
 	if (voice<number_of_voices) {
-	elements[voice]=gabc_det_elements_from_string($1, &current_key, macros);
+   gabc_y_add_notes($1);
 	free($1);
 	}
 	else {
@@ -1030,12 +1087,13 @@ note:
 	complete_with_nulls(voice);
 	}
 	voice=0;
+	nabc_state = 0;
 	update_position_with_space();
 	}
 	|
 	NOTES VOICE_CUT{
 	if (voice<number_of_voices) {
-	elements[voice]=gabc_det_elements_from_string($1, &current_key, macros);
+   gabc_y_add_notes($1);
 	free($1);
 	voice++;
 	}
@@ -1045,14 +1103,24 @@ note:
 	}
 	}
 	|
+	NOTES NABC_CUT{
+	if (voice<number_of_voices) {
+   gabc_y_add_notes($1);
+	free($1);
+	nabc_state = (nabc_state + 1) % (nabc_lines+1);
+	}
+	}
+	|
 	CLOSING_BRACKET {
 	elements[voice]=NULL;
 	voice=0;
+	nabc_state = 0;
 	}
 	|
 	CLOSING_BRACKET_WITH_SPACE {
 	elements[voice]=NULL;
 	voice=0;
+	nabc_state = 0;
 	update_position_with_space();
 	}
 	;

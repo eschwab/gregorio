@@ -141,6 +141,9 @@ extern "C"
     struct gregorio_glyph *first_glyph;
 // a string containing a possible TeX verbatim.
     char *texverb;
+// The nabc string
+    char **nabc;
+    size_t nabc_lines; // we put it here to get the length of the array here too
   } gregorio_element;
 
 /*
@@ -317,6 +320,7 @@ everything, and from which we will construct XML
     char *musixtex_preamble;
 // the font to use in gregoriotex
     char *gregoriotex_font;
+    size_t nabc_lines;
     char *user_notes;
 // the determination method (maximal ambitus, etc.)
     unsigned char det_method;
