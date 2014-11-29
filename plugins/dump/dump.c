@@ -158,6 +158,10 @@ dump_write_score (FILE *f, gregorio_score *score)
     {
       fprintf (f, "   initial_style             %d\n", score->initial_style);
     }
+  if (score->nabc_lines)
+    {
+      fprintf (f, "   nabc_lines                %d\n", score->nabc_lines);
+    }
   if (score->user_notes)
     {
       fprintf (f, "   user_notes                %s\n", score->user_notes);
@@ -273,11 +277,21 @@ dump_write_score (FILE *f, gregorio_score *score)
                        element->element_type,
                        dump_space_type (element->element_type));
             }
-          if (element->type == GRE_TEXVERB_ELEMENT)
+          if (element->texverb)
             {
               fprintf (f, "     TeX string              \"%s\"\n",
                        element->texverb);
             }
+          if (element->nabc_lines) {
+            fprintf (f, "     nabc_lines              %d\n", element->nabc_lines);
+          }
+          if (element->nabc_lines && element->nabc) {
+            for (i = 0; i < element->nabc_lines; i++) {
+              if (element->nabc[i]) {
+                fprintf (f, "     nabc_line %d             \"%s\"\n", i+1, element->nabc[i]);
+              }
+            }
+          }
           if (element->type == GRE_NLBA)
             {
               fprintf (f, "     element_type            %d (%s)\n",
