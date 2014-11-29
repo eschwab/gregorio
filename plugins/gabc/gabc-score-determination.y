@@ -645,9 +645,9 @@ gabc_y_add_notes(char *notes) {
           {
             current_element->nabc[i] = NULL;
           }
-        current_element->nabc_lines = nabc_lines;
    	}
 	   current_element->nabc[nabc_state-1] = strdup(notes);
+	   current_element->nabc_lines = nabc_state;
 	}
 }
 
