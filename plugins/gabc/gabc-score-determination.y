@@ -64,7 +64,8 @@ char error[200];
 // the score that we will determine and return
 gregorio_score *score;
 // an array of elements that we will use for each syllable
-gregorio_element **elements;
+gregorio_element **elements = NULL;
+gregorio_element *current_element = NULL;
 // a table containing the macros to use in gabc file
 char * macros[10];
 // declaration of some functions, the first is the one initializing the flex/bison process
@@ -534,6 +535,7 @@ close_syllable ()
   for (i = 0; i < number_of_voices; i++) {
     elements[i] = NULL;
   }
+  current_element = NULL;
 }
 
 // a function called when we see a [, basically, all characters are added to the translation pointer instead of the text pointer
@@ -618,6 +620,7 @@ gabc_y_add_notes(char *notes) {
    if (nabc_state == 0) {
       if (!elements[voice]) {
 	      elements[voice]=gabc_det_elements_from_string(notes, &current_key, macros);
+	      current_element = elements[voice];
 	   } else {
 	      new_elements = gabc_det_elements_from_string(notes, &current_key, macros);
 	      last_element = elements[voice];
@@ -626,20 +629,25 @@ gabc_y_add_notes(char *notes) {
 	      }
 	      last_element->next = new_elements;
 	      new_elements->previous = last_element;
+	      current_element = new_elements;
 	   }
 	} else {
 	   if (!elements[voice]) {
    	   gregorio_add_element(&elements[voice], NULL);
+   	   current_element = elements[voice];
    	}
-   	if (!elements[voice]->nabc) {
-   	  elements[voice]->nabc = (char **) malloc (nabc_lines * sizeof (char *));
+   	if (!current_element) {
+   	   gregorio_message("current_element is null, this shouldn't happen!","gabc_y_add_notes",FATAL_ERROR,0);
+   	}
+   	if (!current_element->nabc) {
+   	  current_element->nabc = (char **) malloc (nabc_lines * sizeof (char *));
         for (i = 0; i < nabc_lines; i++)
           {
-            elements[voice]->nabc[i] = NULL;
+            current_element->nabc[i] = NULL;
           }
-        elements[voice]->nabc_lines = nabc_lines;
+        current_element->nabc_lines = nabc_lines;
    	}
-	   elements[voice]->nabc[nabc_state] = strdup(notes);
+	   current_element->nabc[nabc_state-1] = strdup(notes);
 	}
 }
 
