@@ -383,6 +383,7 @@ gregoriotex_write_syllable (FILE *f,
   gregorio_element *current_element;
   gregorio_line *line;
   gregorio_element *clef_change_element = NULL;
+  int i;
   if (!syllable)
     {
       return;
@@ -613,6 +614,13 @@ gregoriotex_write_syllable (FILE *f,
           current_element = current_element->next;
           continue;
         }
+      if (current_element->nabc_lines && current_element->nabc) {
+        for (i = 0; i < current_element->nabc_lines; i++) {
+          if (current_element->nabc[i]) {
+            fprintf (f, "\\nabcneumes{%d}{%s}%%\n", i+1, current_element->nabc[i]);
+          }
+        }
+      }
       if (current_element->type == GRE_NLBA)
         {
           if (current_element->element_type == NLBA_BEGINNING)
