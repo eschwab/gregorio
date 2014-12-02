@@ -1383,6 +1383,12 @@
   \global\let\grehyph\grezerhyph %
 }
 
+% this uses gregallchar, not currently available
 \def\nabcneumes#1#2{%
   \gresettextabovelines{\gregallchar{#2}}%
+}
+
+% TODO: load lua macros on demand
+\def\scorenabclines#1{%
+   %
 }

@@ -1112,6 +1112,9 @@ note:
 	}
 	|
 	NOTES NABC_CUT{
+	if (!nabc_lines) {
+	   gregorio_message("You used character \"|\" in gabc without setting \"nabc-lines\" parameter. Please set it in your gabc header.", "det_score",FATAL_ERROR,0);
+	}
 	if (voice<number_of_voices) {
    gabc_y_add_notes($1);
 	free($1);
