@@ -899,7 +899,7 @@
   \global\grelastoflinecount=0\relax %
   \global\greblockcusto=0\relax %
   \ifnum\grenlbstate=0\else %
-    \greendnlbarea{2}%
+    \greendnlbarea{2}{0}%
   \fi %
   \grelocalleftbox{}%
   \ifnum\keeprightbox=0\relax %
@@ -1185,13 +1185,13 @@
   \ifnum#2=0\relax %
     \xdef\grenlbstate{0}%
   \else %
-      \ifcase\grenlbstate %
-        \xdef\grenlbstate{0}%
-      \or %
-        \xdef\grenlbstate{0}%
-      \or %
-        \xdef\grenlbstate{2}%
-      \fi %
+    \ifcase\grenlbstate %
+      \xdef\grenlbstate{0}%
+    \or %
+      \xdef\grenlbstate{0}%
+    \or %
+      \xdef\grenlbstate{2}%
+    \fi %
   \fi %
   % if grenlbstate is not 0, then nothing should happend
   \ifnum\grenlbstate=0\relax %
