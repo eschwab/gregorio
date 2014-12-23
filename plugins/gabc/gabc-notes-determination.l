@@ -146,15 +146,15 @@ char *tempstr=NULL;
   gregorio_add_nlba_as_note(&current_note, NLBA_END);
     }
 <overbrace>[^\]]+ {
-  snprintf(tempstr,70, "\\greoverbrace{%s}{0pt}{0pt}{%d}",gabc_notes_determination_text, char_for_brace);
+  snprintf(tempstr,71, "\\greoverbrace{%s}{0pt}{0pt}{%d}",gabc_notes_determination_text, char_for_brace);
 	gregorio_add_texverb_to_note(&current_note, strdup(tempstr));
     }
 <overcurlybrace>[^\]]+ {
-  snprintf(tempstr,70, "\\greovercurlybrace{%s}{0}{0pt}{0pt}{%d}",gabc_notes_determination_text, char_for_brace);
+  snprintf(tempstr,71, "\\greovercurlybrace{%s}{0}{0pt}{0pt}{%d}",gabc_notes_determination_text, char_for_brace);
 	gregorio_add_texverb_to_note(&current_note, strdup(tempstr));
     }
 <overcurlyaccentusbrace>[^\]]+ {
-  snprintf(tempstr,70, "\\greovercurlybrace{%s}{1}{0pt}{0pt}{%d}",gabc_notes_determination_text, char_for_brace);
+  snprintf(tempstr,71, "\\greovercurlybrace{%s}{1}{0pt}{0pt}{%d}",gabc_notes_determination_text, char_for_brace);
 	gregorio_add_texverb_to_note(&current_note, strdup(tempstr));
     }
 <choralsign>[^\]]+ {
@@ -183,7 +183,7 @@ char *tempstr=NULL;
     }
 [a-m]\+  {
   // waiting for a cleaner solution...
-	snprintf(tempstr,18, "\\gremanualcusto{%c}",gabc_notes_determination_text[0]);
+	snprintf(tempstr,19, "\\gremanualcusto{%c}",gabc_notes_determination_text[0]);
 	gregorio_add_texverb_as_note(&current_note, strdup(tempstr), GRE_TEXVERB_ELEMENT);
     }
 [\t\r\n]+      /* ignore ends of line and tabs */;
