@@ -169,6 +169,12 @@
 % larger space between elements
 \newskip\grelargerspace
 
+% space between elements in ancient notation
+\newskip\grenabcinterelementspace
+
+% larger space between elements in ancient notation
+\newskip\grenabclargerspace
+
 % space between elements which has the size of a note
 \newskip\greglyphspace
 
@@ -414,6 +420,8 @@
   \greadaptoneconfvalue{\grebeforealterationspace}%
   \greadaptoneconfvalue{\greinterelementspace}%
   \greadaptoneconfvalue{\grelargerspace}%
+  \greadaptoneconfvalue{\grenabcinterelementspace}%
+  \greadaptoneconfvalue{\grenabclargerspace}%
   \greadaptoneconfvalue{\greglyphspace}%
   \greadaptoneconfvalue{\greintersyllablespace}%
   \greadaptoneconfvalue{\grespacebeforecusto}%
@@ -522,6 +530,8 @@
   \grechangeonedimenfactor{\grebeforealterationspace}{#1}{#2}%
   \grechangeonedimenfactor{\greinterelementspace}{#1}{#2}%
   \grechangeonedimenfactor{\grelargerspace}{#1}{#2}%
+  \grechangeonedimenfactor{\grenabcinterelementspace}{#1}{#2}%
+  \grechangeonedimenfactor{\grenabclargerspace}{#1}{#2}%
   \grechangeonedimenfactor{\greglyphspace}{#1}{#2}%
   \grechangeonedimenfactor{\greintersyllablespace}{#1}{#2}%
   \grechangeonedimenfactor{\grespacebeforecusto}{#1}{#2}%
