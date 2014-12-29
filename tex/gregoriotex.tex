@@ -1385,9 +1385,16 @@
   \global\let\grehyph\grezerhyph %
 }
 
-% this uses gregallchar, not currently available
-\def\nabcneumes#1#2{%
-  \gresettextabovelines{\gregallchar{#2}}%
+% this uses gregallchar, not currently available. nabc can contain ~, so making
+% it inactive.
+\def\nabcneumes{%
+  \begingroup %
+    \catcode`\~=12{}%
+    \dogregallchar%
+}
+\def\donabcneumes#1#2{
+    \gresettextabovelines{\gregallchar{#2}}%
+  \endgroup %
 }
 
 % TODO: load lua macros on demand
