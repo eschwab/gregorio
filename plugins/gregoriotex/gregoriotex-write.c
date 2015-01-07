@@ -2149,6 +2149,7 @@ gregoriotex_write_choral_sign (FILE *f,
     {
     case G_FLEXUS:
     case G_TORCULUS:
+    case G_TORCULUS_LIQUESCENS:
     case G_TORCULUS_RESUPINUS_FLEXUS:
     case G_PORRECTUS_FLEXUS:
       if (!current_note->next)
@@ -3928,6 +3929,28 @@ void
                                                        glyph->liquescentia);
         }
       break;
+    case G_TORCULUS_LIQUESCENS:
+      if (glyph->first_note->shape == S_QUILISMA)
+        {
+          *type = AT_QUILISMA;
+          *gtype = T_TORCULUS_LIQUESCENS_QUILISMA;
+          temp =
+            TYPE_FACTOR * T_TORCULUS_LIQUESCENS_QUILISMA +
+            gregoriotex_determine_liquescentia_number (L_LIQ_FACTOR,
+                                                       L_ONLY_DEMINUTUS,
+                                                       glyph->liquescentia);
+        }
+      else
+        {
+          *type = AT_ONE_NOTE;
+          *gtype = T_TORCULUS_LIQUESCENS;
+          temp =
+            TYPE_FACTOR * T_TORCULUS_LIQUESCENS +
+            gregoriotex_determine_liquescentia_number (L_LIQ_FACTOR, 
+                                                       L_ONLY_DEMINUTUS,
+                                                       glyph->liquescentia);
+        }
+      break;
     case G_TORCULUS_RESUPINUS_FLEXUS:
       // not sure about that... TODO: check
       *type = AT_ONE_NOTE;
@@ -4230,6 +4253,7 @@ gregoriotex_write_note (FILE *f, gregorio_note *note,
                         char next_note_pitch)
 {
   unsigned int glyph_number;
+  unsigned int initial_shape = note->shape;
   char temp;
   // type in the sense of GregorioTeX alignment type
   int type = AT_ONE_NOTE;
@@ -4240,9 +4264,27 @@ gregoriotex_write_note (FILE *f, gregorio_note *note,
                         "gregoriotex_write_note", ERROR, 0);
       return;
     }
-
+  if (note->shape == S_PUNCTUM && note->liquescentia != L_NO_LIQUESCENTIA)
+    {
+    switch (note->liquescentia)
+      {
+        case L_AUCTUS_ASCENDENS:
+          note->shape = S_PUNCTUM_AUCTUS_ASCENDENS;
+          break;
+        case L_AUCTUS_DESCENDENS:
+        case L_AUCTA:
+          note->shape = S_PUNCTUM_AUCTUS_DESCENDENS;
+          break;
+        case L_DEMINUTUS:
+        case L_INITIO_DEBILIS:
+          note->shape = S_PUNCTUM_DEMINUTUS;
+        default:
+          break;
+        }
+    }
   gregoriotex_determine_note_number_and_type (note, glyph, element, &type,
                                               &glyph_number);
+  note->shape = initial_shape;
   // special things for puncta inclinata
   if (note->shape == S_PUNCTUM_INCLINATUM)
     {
