@@ -980,12 +980,32 @@
 \let\gre@pitch@cleftop\gre@pitch@dummy %
 \let\gre@pitch@clefbottom\gre@pitch@dummy %
 
+% \gre@space@dimen@abovelinestextheight and \gre@space@dimen@translationheight are macros, but Lua code can only read dimens
+\newdimen\gre@dimen@maybe@abovelinestextheight
+\newdimen\gre@dimen@maybe@translationheight
+\newdimen\gre@dimen@maybe@noteadditionalspacelinestext
+
 % #1 is the high height
 % #2 is the low height
 % #3 is 1 if there is a translation somewhere
 % #4 is if 1 if we have space above the staff
 \def\gre@calculate@additionalspaces#1#2#3#4{%
   \gre@trace{gre@calculate@additionalspaces{#1}{#2}{#3}{#4}}%
+  \ifnum\gre@variableheightexpansion>1\relax
+    \global\gre@dimen@maybe@abovelinestextheight=\gre@space@dimen@abovelinestextheight\relax
+    \global\gre@dimen@additionaltopspace=0pt\relax
+    \global\gre@dimen@additionaltopspacealt=0pt\relax
+    \global\gre@dimen@additionaltopspacenabc=0pt\relax
+    \ifgre@noteadditionalspacelinestext
+      \global\gre@dimen@maybe@noteadditionalspacelinestext=\gre@space@dimen@noteadditionalspacelinestext
+    \else
+      \global\gre@dimen@maybe@noteadditionalspacelinestext=\dimexpr(\gre@dimen@interstafflinedistancebase+\gre@dimen@stafflinethicknessbase)/2 * \gre@factor\relax
+    \fi
+    \global\gre@dimen@additionalbottomspace=0pt\relax
+    \global\gre@dimen@maybe@translationheight=\gre@space@dimen@translationheight\relax
+    \gre@removetranslationspace
+    \gre@removespaceabove
+  \else
   \gre@num@max{#1}{\gre@pitch@cleftop}%
   \gre@count@temp@one=\numexpr(\gre@count@temp@one - \gre@pitch@adjust@top - \gre@space@count@additionaltopspacethreshold)\relax %
   \ifnum\gre@count@temp@one>0\relax %
@@ -1028,6 +1048,7 @@
   \else %
     \gre@removespaceabove %
   \fi %
+  \fi % \gre@variableheightexpansion < 2
   \gre@generatelines %
   \gre@calculate@constantglyphraise %
   \relax %

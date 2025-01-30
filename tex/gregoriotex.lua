@@ -47,8 +47,11 @@ local hlist = node.id('hlist')
 local vlist = node.id('vlist')
 local glyph = node.id('glyph')
 local glue = node.id('glue')
+local kern = node.id('kern')
+local rule = node.id('rule')
 local whatsit = node.id('whatsit')
 local rule = node.id('rule')
+local disc = node.id('disc')
 
 local hyphen = tex.defaulthyphenchar or 45
 
@@ -56,6 +59,10 @@ local part_attr = luatexbase.attributes['gre@attr@part']
 local part_commentary = 1
 local part_stafflines = 2
 local part_initial = 3
+local part_lyrics = 4
+local part_translation = 5
+local part_alt = 6
+local part_nabc = 7
 
 local dash_attr = luatexbase.attributes['gre@attr@dash']
 local potentialdashvalue   = 1
@@ -132,12 +139,7 @@ local saved_counts = {}
 
 local catcode_at_letter = luatexbase.catcodetables['gre@atletter']
 
-local user_defined_subtype = node.subtype('user_defined')
-local create_marker = luatexbase.new_user_whatsit('marker', 'gregoriotex')
-local marker_whatsit_id = luatexbase.get_user_whatsit_id('marker', 'gregoriotex')
-local translation_mark = 1
-local abovelinestext_mark = 2
-log("marker whatsit id is %d", marker_whatsit_id)
+local first_line_prevdepth = 0
 
 local function get_prog_output(cmd, tmpname, fmt)
   local rc = os.spawn(cmd)
@@ -187,27 +189,6 @@ local function gregorio_exe()
   end
 
   return real_gregorio_exe
-end
-
-local function mark(value)
-  local marker = create_marker()
-  marker.type = 100
-  marker.value = value
-  marker.attr = node.current_attr()
-  node.write(marker)
-end
-
-local function mark_translation()
-  mark(translation_mark)
-end
-
-local function mark_abovelinestext()
-  mark(abovelinestext_mark)
-end
-
-local function is_mark(node, value)
-  return node.id == whatsit and node.subtype == user_defined_subtype and
-      node.user_id == marker_whatsit_id and node.value == value
 end
 
 local function keys_changed(tab1, tab2)
@@ -473,10 +454,16 @@ local function dump_nodes_helper(head, indent)
   local dots = string.rep('..', indent)
   for n in traverse(head) do
     local ids = format("%s", has_attribute(n, glyph_id))
-    if node.type(n.id) == 'penalty' then
-      log(dots .. "%s %s {%s}", node.type(n.id), n.penalty, ids)
+    if n.id == hlist or n.id == vlist then
+      log(dots .. "%s [%s] width=%.2fpt height=%.2fpt depth=%.2fpt shift=%.2fpt {%s}", node.type(n.id), n.subtype, n.width/2^16, n.height/2^16, n.depth/2^16, n.shift/2^16, ids)
+    elseif n.id == rule then
+      log(dots .. "rule [%s] width=%.2fpt height=%.2fpt depth=%.2fpt", n.subtype, n.width/2^16, n.height/2^16, n.depth/2^16)
     elseif n.id == whatsit and n.subtype == user_defined_subtype and n.user_id == marker_whatsit_id then
       log(dots .. "marker-whatsit %s", n.value)
+    elseif n.id == glue then
+      log(dots .. "glue [%s] width=%.2fpt", n.subtype, n.width/2^16)
+    elseif node.type(n.id) == 'penalty' then
+      log(dots .. "penalty %s {%s}", n.penalty, ids)
     elseif n.id == glyph then
       local f = font.fonts[n.font]
       local charname
@@ -484,17 +471,13 @@ local function dump_nodes_helper(head, indent)
         if v == n.char then charname = k end
       end
       log(dots .. "glyph %s {%s}", charname, ids)
-    elseif n.id == rule then
-      log(dots .. "rule [%s] width=%.2fpt height=%.2fpt depth=%.2fpt", n.subtype, n.width/2^16, n.height/2^16, n.depth/2^16)
-    elseif n.id == hlist or n.id ==vlist then
-      log(dots .. "%s [%s] width=%.2fpt height=%.2fpt depth=%.2fpt shift=%.2fpt {%s}", node.type(n.id), n.subtype, n.width/2^16, n.height/2^16, n.depth/2^16, n.shift/2^16, ids)
-    elseif n.id == glue then
-      log(dots .. "glue [%s] width=%.2fpt", n.subtype, n.width/2^16)
     else
       log(dots .. "node %s [%s] {%s}", node.type(n.id), n.subtype, ids)
     end
     if n.id == hlist or n.id == vlist then
       dump_nodes_helper(n.head, indent+1)
+    elseif n.id == disc then
+      dump_nodes_helper(n.replace, indent+1)
     end
   end
 end
@@ -599,24 +582,6 @@ local function adjust_fullwidth (line)
   visit(line)
 end
 
--- Adjust height and depth of an hlist to fit its contents
-local function adjust_hlist(cur)
-  local new_height = 0
-  local new_depth = 0
-  for child in traverse(cur.head) do
-    if child.id == hlist or child.id == vlist then
-      new_height = math.max(new_height, child.height - child.shift)
-      new_depth = math.max(new_depth, child.depth + child.shift)
-    elseif child.id == rule or child.id == glyph then
-      new_height = math.max(new_height, child.height)
-      new_depth = math.max(new_depth, child.depth)
-    end
-  end
-  debugmessage('adjust_hlist', 'height %spt -> %spt, depth %spt -> %spt', cur.height/2^16, new_height/2^16, cur.depth/2^16, new_depth/2^16)
-  cur.height = new_height
-  cur.depth = new_depth
-end
-
 local function find_attr(cur, attr, val)
   if has_attribute(cur, attr, val) then
     return cur
@@ -628,6 +593,41 @@ local function find_attr(cur, attr, val)
       end
     end
   end
+end
+
+-- Recompute interline glue
+local function adjust_glue(glue)
+  -- Find previous line and its depth
+  local prevline = glue.prev
+  while prevline ~= nil and prevline.id ~= hlist do
+    prevline = prevline.prev
+  end
+  local prevdepth
+  if prevline == nil then
+    prevdepth = first_line_prevdepth
+  else
+    prevdepth = prevline.depth
+  end
+    
+  debugmessage('adjust_glue', 'prev depth %.2f, cur height %.2f', prevdepth/2^16, glue.next.height/2^16)
+  debugmessage('adjust_glue', 'baselineskip width=%.2f', tex.baselineskip.width/2^16)
+
+  local subtype = 'baselineskip'
+  debugmessage('adjust_glue', 'old glue is %s %spt plus %spt minus %spt', subtype, glue.width/2^16, glue.stretch/2^16, glue.shrink/2^16)
+  
+  local new_width = tex.baselineskip.width - prevdepth - glue.next.height
+  if new_width < tex.lineskiplimit then
+    glue.subtype = 1 -- lineskip
+    subtype = 'lineskip'
+    node.setglue(glue, node.getglue(tex.lineskip))
+  else
+    new_subtype = 2 -- baselineskip
+    subtype = 'baselineskip'
+    node.setglue(glue, node.getglue(tex.baselineskip))
+    glue.width = new_width
+  end
+  
+  debugmessage('adjust_glue', 'new glue is %s %spt plus %spt minus %spt', subtype, glue.width/2^16, glue.stretch/2^16, glue.shrink/2^16)
 end
 
 local function drop_initial(h)
@@ -652,13 +652,11 @@ local function drop_initial(h)
   -- Add up the total distance from the initial's current position
   -- (baseline of first line) to the baseline of the last indented line.
   local last_line
-  local last_glue
   local last_distance = 0
   local line_num = 0
   for line in traverse(h) do
     if line.id == glue then
       debugmessage("initial", "glue %spt", line.width/2^16)
-      if line_num == indented then last_glue = line end
       -- bug: this can't account for stretch or shrink
       if line_num >= 1 and line_num < indented then
         last_distance = last_distance + line.width
@@ -697,21 +695,160 @@ local function drop_initial(h)
   -- Adjust height of first line using the initial's true height
   initial_line.height = math.max(initial_line.height, save_height - initial_shift)
   -- Pretend that the initial's descender is on the last indented line
-  local save_last_depth = last_line.depth
   last_line.depth = math.max(last_line.depth, save_depth + initial_shift - last_distance)
 
   -- Adjust glue between last line and the line after it.
-  if last_glue and last_glue.subtype == 2 then -- baselineskip
-    last_glue.width = last_glue.width - last_line.depth + save_last_depth
-    if last_glue.width < tex.lineskiplimit then
-      last_glue.subtype = 1 -- lineskip
-      node.setglue(last_glue, node.getglue(tex.lineskip))
-    end
-    debugmessage('initial', 'set last_glue to %spt plus %spt minus %spt', last_glue.width/2^16, last_glue.stretch/2^16, last_glue.shrink/2^16)
+  if last_line.next ~= nil and last_line.next.id == glue then
+    adjust_glue(last_line.next)
   end
 
 end
+
+local function compute_line_statistics(line, info)
+  -- Check if there is a translation or abovelinestext anywhere in line
+  -- and find the top and bottom pitches in the line.
+  if info == nil then
+    info = {
+      has_translation = false,
+      has_abovelinestext = false,
+      line_top = 7, -- e = \gre@pitch@dummy
+      line_bottom = 7 -- e = \gre@pitch@dummy
+    }
+  end
+  for n in traverse(line.head) do
+    if has_attribute(n, part_attr, part_translation) then
+      info.has_translation = true
+    elseif has_attribute(n, part_attr, part_alt) or has_attribute(n, part_attr, part_nabc) then
+      info.has_abovelinestext = true
+    elseif has_attribute(n, glyph_id_attr) then
+      if info.glyph_top == nil or has_attribute(n, glyph_top_attr) > info.glyph_top then
+        info.glyph_top = has_attribute(n, glyph_top_attr)
+      end
+      if info.glyph_bottom == nil or has_attribute(n, glyph_bottom_attr) < info.glyph_bottom then
+        info.glyph_bottom = has_attribute(n, glyph_bottom_attr)
+      end
+    end
+  end
+  debugmessage('compute_line_statistics', 'has_abovelinestext %s has_translation %s glyph_top %s glyph_bottom %s', info.has_abovelinestext, info.has_translation, info.glyph_top, info.glyph_bottom)
+  return info
+end
+
+local function adjust_additional_spaces(line, info)
+  local abovelinestext_height = 0
+  local additional_top_space = 0
+  local additional_top_space_alt = 0
+  local additional_top_space_nabc = 0
+  local additional_bottom_space = 0
+  local translation_height = 0
+
+  -- distance between stafflines
+  local staffline_distance = math.floor((tex.dimen['gre@dimen@interstafflinedistancebase'] + tex.dimen['gre@dimen@stafflinethicknessbase']+1)/2) * tex.count['gre@factor'] -- rounding to get same result as the TeX \dimexpr this is based on
+  local bottom_staffline_distance = tex.dimen['gre@dimen@maybe@noteadditionalspacelinestext'] -- this may be different from staffline_distance under the legacy option \gresetnoteadditionalspacelinestext{manual}
   
+  -- recompute top and bottom pitches, since we can't access \gre@pitch@adjust@top and \gre@pitch@adjust@bottom
+  local adjust_bottom = tex.count['gre@space@count@noteadditionalspacelinestextthreshold'] + 3
+  local adjust_top = 4 + 2*tex.count['gre@count@stafflines']
+
+  -- compute additional spaces
+  additional_top_space = math.max(0, info.glyph_top - adjust_top - tex.count['gre@space@count@additionaltopspacethreshold']) * staffline_distance
+  additional_top_space_alt = math.max(0, info.glyph_top - adjust_top - tex.count['gre@space@count@additionaltopspacealtthreshold']) * staffline_distance
+  additional_top_space_nabc = math.max(0, info.glyph_top - adjust_top - tex.count['gre@space@count@additionaltopspacenabcthreshold']) * staffline_distance
+  debugmessage('adjust_additional_spaces', 'additional top space %spt alt %spt nabc %spt', additional_top_space/2^16, additional_top_space_alt/2^16, additional_top_space_nabc/2^16)
+  additional_bottom_space = math.max(0, adjust_bottom - info.glyph_bottom) * bottom_staffline_distance
+  debugmessage('adjust_additional_spaces', 'additional bottom space %spt', additional_bottom_space/2^16)
+  
+  if info.has_translation then
+      translation_height = tex.dimen['gre@dimen@maybe@translationheight']
+      debugmessage('adjust_additional_spaces', 'setting translation height to %spt', translation_height/2^16)
+  end
+  if info.has_abovelinestext then
+      abovelinestext_height = tex.dimen['gre@dimen@maybe@abovelinestextheight']
+      debugmessage('adjust_additional_spaces', 'setting abovelinestext height to %spt', abovelinestext_height/2^16)
+  end
+
+  -- Recursively traverse the tree, making the following changes:
+  --   height of line increases by abovelinestext_height
+  --   height of line increases by additional_top_space
+  --   alt text shifts up by additional_top_space_alt
+  --   nabc text shifts up by additional_top_space_nabc
+  --   everything but translation and lyrics shifts up by additional_bottom_space
+  --   everything but lyrics shifts up by translation_height
+  --   height of line increases by additional_bottom_space
+  --   height of line increases by translation_height
+  
+  local function visit(cur)
+    local changed = false
+    local children = nil
+    if cur.id == hlist then
+      children = cur.head
+    elseif cur.id == disc then
+      children = cur.replace
+    end
+    for child in traverse(children) do
+      local child_part_attr = has_attribute(child, part_attr)
+      if child_part_attr == part_alt then
+        debugmessage('adjust_additional_spaces', 'shift abovelinestext up by additionaltopspacealt (%spt)', additional_top_space_alt/2^16)
+        child.shift = child.shift - additional_top_space_alt
+        changed = true
+      elseif child_part_attr == part_nabc then
+        debugmessage('adjust_additional_spaces', 'shift nabc up by additionaltopspacenabc (%spt)', additional_top_space_nabc/2^16)
+        child.shift = child.shift - additional_top_space_nabc
+        changed = true
+      elseif child_part_attr == part_stafflines then
+        debugmessage('adjust_additional_spaces', 'increase height by abovelinestextheight (%spt) + additionaltopspace (%spt)', abovelinestext_height/2^16, additional_top_space/2^16)
+        local g = node.new(glue, 0)
+        g.width = abovelinestext_height + additional_top_space
+        child.head = node.insert_before(child.head, child.head, g)
+        child.height = child.height + g.width
+        changed = true
+      elseif child_part_attr == part_lyrics or child_part_attr == part_initial then
+        debugmessage('adjust_additional_spaces', 'shift lyrics/initial down by additionalbottomspace (%spt)', additional_bottom_space/2^16)
+        child.shift = child.shift + additional_bottom_space
+        changed = true
+      elseif child_part_attr == part_translation then
+        debugmessage('adjust_additional_spaces', 'shift translation down by additionalbottomspace (%spt) + translationheight (%spt)', additional_bottom_space/2^16, translation_height/2^16)
+        child.shift = child.shift + additional_bottom_space + translation_height
+        changed = true
+      else
+        local child_changed = visit(child)
+        changed = changed or child_changed
+      end
+    end
+    -- Update cur's height and depth to fit contents. But if cur has
+    -- zero height+depth (e.g., a multiline initial), assume that it
+    -- has been smashed for a good reason and don't unsmash it.
+    if changed and cur.id == hlist and cur.height+cur.depth > 0 then
+      _, cur.height, cur.depth = node.rangedimensions(cur, cur.head)
+    end
+    return changed
+  end
+
+  visit(line)
+
+  -- To fix the baseline, move everything up
+  local function shift_up(n)
+    if n.id == rule then
+      err("Can't raise/lower a rule (this shouldn't happen)")
+    elseif n.id == hlist or n.id == vlist then
+      debugmessage('adjust_additional_spaces', 'shift node up by additionalbottomspace (%spt) + translationheight (%spt)', additional_bottom_space/2^16, translation_height/2^16)
+      n.shift = n.shift - additional_bottom_space - translation_height
+    elseif node.type(n.id) == 'disc' then
+      for child in node.traverse(n.replace) do
+        shift_up(child)
+      end
+    end
+  end
+  
+  for n in traverse(line.head) do
+    shift_up(n)
+  end
+  _, line.height, line.depth = node.rangedimensions(line, line.head)
+
+  if line.prev ~= nil and line.prev.id == glue then
+    adjust_glue(line.prev)
+  end
+end
+
 -- in each function we check if we really are inside a score,
 -- which we can see with the dash_attr being set or not
 local function post_linebreak(h, groupcode, glyphes)
@@ -725,6 +862,7 @@ local function post_linebreak(h, groupcode, glyphes)
   local line_has_abovelinestext = false
   local linenum                 = 0
   local syl_id                  = nil
+  
   -- we explore the lines
   for line in traverse(h) do
     if line.id == glue then
@@ -778,16 +916,16 @@ local function post_linebreak(h, groupcode, glyphes)
             end
           end
         end
-        -- look for marks
+
+        -- Check if line has translation or abovelinestext
         if new_score_heights then
-          for n in traverse_id(whatsit, line.head) do
+          for n in traverse_id(hlist, line.head) do
             line_has_translation = line_has_translation or
-                is_mark(n, translation_mark)
+                has_attribute(n, part_attr, part_translation)
             line_has_abovelinestext = line_has_abovelinestext or
-                is_mark(n, abovelinestext_mark)
+                has_attribute(n, part_attr, part_alt) or has_attribute(n, part_attr, part_nabc)
           end
         end
-
         if line_id then
           new_score_heights[prev_line_id] = { linenum, line_top, line_bottom,
               line_has_translation and 1 or 0,
@@ -801,7 +939,23 @@ local function post_linebreak(h, groupcode, glyphes)
       end
     end
   end
-
+  
+  -- Line height adjustment.
+  if tex.count['gre@variableheightexpansion'] == 2 then -- uniform
+    local info
+    for line in traverse_id(hlist, h) do
+      info = compute_line_statistics(line, info)
+    end
+    for line in traverse_id(hlist, h) do
+      adjust_additional_spaces(line, info)
+    end
+  elseif tex.count['gre@variableheightexpansion'] == 3 then -- variable
+    for line in traverse_id(hlist, h) do
+      local info = compute_line_statistics(line)
+      adjust_additional_spaces(line, info)
+    end
+  end
+  
   -- If there is a dropped initial, lower it to its correct position
   if tex.count['gre@count@initiallines'] > 1 or tex.count['gre@count@initialposition'] == 3 then
     drop_initial(h)
@@ -967,6 +1121,7 @@ local inside_score = false
 local function at_score_beginning(score_id, top_height, bottom_height,
     has_translation, has_above_lines_text, top_height_adj, bottom_height_adj,
     score_font_name)
+  first_line_prevdepth = tex.prevdepth -- used in adjust_glue
   inside_score = true
   local inclusion = score_inclusion[score_id] or 1
   score_inclusion[score_id] = inclusion + 1
@@ -1900,8 +2055,6 @@ gregoriotex.direct_gabc                  = direct_gabc
 gregoriotex.adjust_line_height           = adjust_line_height
 gregoriotex.var_brace_len                = var_brace_len
 gregoriotex.save_length                  = save_length
-gregoriotex.mark_translation             = mark_translation
-gregoriotex.mark_abovelinestext          = mark_abovelinestext
 gregoriotex.width_to_bp                  = width_to_bp
 gregoriotex.hypotenuse                   = hypotenuse
 gregoriotex.rotation                     = rotation

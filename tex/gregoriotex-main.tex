@@ -84,6 +84,7 @@
 
 % an attribute to mark various parts of the score
 % 1 = commentary, 2 = stafflines, 3 = initial
+% 4 = lyrics, 5 = translation, 6 = alt, 7 = nabc
 \newluatexattribute\gre@attr@part%
   \edef\gre@attrid@part{\the\allocationnumber}
 
@@ -282,17 +283,6 @@
   \fi %
   %%
   \GreResetEolCustos\relax %
-  \gre@trace@end%
-}%
-
-\def\gre@mark@translation{%
-  \gre@trace{gre@mark@translation}%
-  \directlua{gregoriotex.mark_translation()}%
-  \gre@trace@end%
-}%
-\def\gre@mark@abovelinestext{%
-  \gre@trace{gre@mark@abovelinestext}%
-  \directlua{gregoriotex.mark_abovelinestext()}%
   \gre@trace@end%
 }%
 
@@ -731,8 +721,10 @@
   \endgre@style@abovelinestext%
   \ifnum#2=0\relax%
     \gre@dimen@temp@five=\gre@dimen@additionaltopspacealt\relax%
+    \gre@attr@part=6\relax
   \else%
     \gre@dimen@temp@five=\gre@dimen@additionaltopspacenabc\relax%
+    \gre@attr@part=7\relax
   \fi%
   \gre@dimen@temp@five=\dimexpr(\gre@dimen@staffheight %
     + \gre@dimen@interstafflinespace %
@@ -742,9 +734,9 @@
     + \gre@dimen@additionalbottomspace %
     + \gre@dimen@temp@five %
     + \gre@space@dimen@abovelinestextraise)\relax%
-  \gre@mark@abovelinestext %
   \gre@debugmsg{spacing}{Raise alt text: \the\gre@dimen@temp@five}%
-    \leavevmode\raise\gre@dimen@temp@five\hbox to 0pt{\gre@style@abovelinestext#1\endgre@style@abovelinestext\hss}%
+  \leavevmode\raise\gre@dimen@temp@five\hbox to 0pt{\gre@style@abovelinestext#1\endgre@style@abovelinestext\hss}%
+  \gre@attr@part=-"7FFFFFFF\relax % nil
   \relax %
   \gre@trace@end%
 }%
@@ -926,13 +918,11 @@
     \ifgre@translationcentering %
       \setbox\gre@box@temp@width=\hbox{#1}%
       \gre@dimen@temp@five=\dimexpr((\wd\gre@box@syllabletext - \wd\gre@box@temp@width) / 2)\relax%
-      \gre@mark@translation %
       \kern\gre@dimen@temp@five %
-      \raise\gre@space@dimen@spacebeneathtext\hbox to 0pt{\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}}%
+      \raise\gre@space@dimen@spacebeneathtext\hbox attr \gre@attrid@part=5 to 0pt{\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}}%
       \kern-\gre@dimen@temp@five %
     \else %
-      \gre@mark@translation %
-      \raise\gre@space@dimen@spacebeneathtext\hbox to 0pt{\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}}%
+      \raise\gre@space@dimen@spacebeneathtext\hbox attr \gre@attrid@part=5 to 0pt{\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}}%
     \fi %
   \fi%
 }%
@@ -943,8 +933,7 @@
       \GreBeginNLBArea{0}{1}%
     \fi %
     \gre@attr@center=1\relax %
-    \gre@mark@translation %
-    \raise\gre@space@dimen@spacebeneathtext\hbox to 0pt{\kern 0pt\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}\kern 0pt}%
+    \raise\gre@space@dimen@spacebeneathtext\hbox attr \gre@attrid@part=5 to 0pt{\kern 0pt\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}\kern 0pt}%
     \unsetluatexattribute{\gre@attr@center}%
     \relax %
   \fi%
@@ -992,13 +981,17 @@
 }%
 
 % make this a count so that it can be read more easily in Lua
-\newcount\gre@variableheightexpansion\gre@variableheightexpansion=1\relax %
+\newcount\gre@variableheightexpansion\gre@variableheightexpansion=3\relax %
 \def\gresetlineheightexpansion#1{%
   \IfStrEqCase{#1}{%
-    {uniform}%
+    {olduniform}%
       {\gre@variableheightexpansion=0\relax }%
-    {variable}%
+    {oldvariable}%
       {\gre@variableheightexpansion=1\relax }%
+    {uniform}%
+      {\gre@variableheightexpansion=2\relax }%
+    {variable}%
+      {\gre@variableheightexpansion=3\relax }%
     }[% all other cases
       \gre@error{Unrecognized option "#1" for \protect\gresetlineheightexpansion\MessageBreak Possible options are: 'uniform' and 'variable'}%
     ]%

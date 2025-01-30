@@ -1049,8 +1049,8 @@
     \kern\gre@skip@temp@one %
   \fi%
   #8\relax %
-  \raise\gre@dimen@textlower%
-  \copy\gre@box@syllabletext %
+  \raise\gre@dimen@textlower
+  \hbox attr \gre@attrid@part=4 {\unhcopy\gre@box@syllabletext}%
   \ifgre@mustdotranslationcenterend%
     % case of end of translation centering, we do it after the typesetting of the text
     \gre@dotranslationcenterend %
@@ -1324,7 +1324,8 @@
     #8%
     \GreNoBreak %
     %print the text, the raise is in case of a translation
-    \raise\gre@dimen@textlower \copy\gre@box@syllabletext%
+    \raise\gre@dimen@textlower
+    \hbox attr \gre@attrid@part=4 {\unhcopy\gre@box@syllabletext}%
     %and the code which handles translation centering
     \ifgre@mustdotranslationcenterend%
       % case of end of translation centering, we do it after the typesetting of the text

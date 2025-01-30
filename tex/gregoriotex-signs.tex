@@ -324,6 +324,7 @@
 \def\gre@typeclef#1#2#3#4#5#6#7#8{%
   \gre@trace{gre@typeclef{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}}%
   \gre@save@clefextrema{#2}{#7}%
+  \GreGlyphHeights{\gre@pitch@cleftop}{\gre@pitch@clefbottom}%
   \gre@boxclef{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}%
   \ifcase#3%
     \gre@update@clefwidth@current{\wd\gre@box@temp@width}%
