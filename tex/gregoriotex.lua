@@ -132,6 +132,7 @@ local capture_header_macro = {}
 local hashed_spaces = {}
 local space_hash = ''
 
+local dims = {}
 local per_line_dims = {}
 local per_line_counts = {}
 local saved_dims = {}
@@ -733,49 +734,71 @@ local function compute_line_statistics(line, info)
   return info
 end
 
-local function adjust_additional_spaces(line, info)
-  local abovelinestext_height = 0
-  local additional_top_space = 0
-  local additional_top_space_alt = 0
-  local additional_top_space_nabc = 0
-  local additional_bottom_space = 0
-  local translation_height = 0
+local function adjust_additional_spaces(line, info, linenum)
+  -- Adjust the vertical positioning of all the parts of line, as well
+  -- as its total height and the interline skip above the line.
+  
+  local function get_space(name)
+    if per_line_dims[linenum] ~= nil and per_line_dims[linenum][name] ~= nil then
+      return per_line_dims[linenum][name]
+    else
+      return saved_dims[name]
+    end
+  end
+  
+  local function get_count(name)
+    if per_line_counts[linenum] ~= nil and per_line_counts[linenum][name] ~= nil then
+      return per_line_counts[linenum][name]
+    else
+      return tex.count['gre@space@count@'..name]
+    end
+  end
 
   -- distance between stafflines
   local staffline_distance = math.floor((tex.dimen['gre@dimen@interstafflinedistancebase'] + tex.dimen['gre@dimen@stafflinethicknessbase']+1)/2) * tex.count['gre@factor'] -- rounding to get same result as the TeX \dimexpr this is based on
-  local bottom_staffline_distance = tex.dimen['gre@dimen@maybe@noteadditionalspacelinestext'] -- this may be different from staffline_distance under the legacy option \gresetnoteadditionalspacelinestext{manual}
+  local note_additional_space_lines_text = get_space('noteadditionalspacelinestext') -- this may be different from staffline_distance under the legacy option \gresetnoteadditionalspacelinestext{manual}
+
+  -- thresholds for additional top/bottom spaces
+  local top_threshold = get_count('additionaltopspacethreshold')
+  local alt_threshold = get_count('additionaltopspacealtthreshold')
+  local nabc_threshold = get_count('additionaltopspacenabcthreshold')
+  local bottom_threshold = get_count('noteadditionalspacelinestextthreshold')
   
   -- recompute top and bottom pitches, since we can't access \gre@pitch@adjust@top and \gre@pitch@adjust@bottom
-  local adjust_bottom = tex.count['gre@space@count@noteadditionalspacelinestextthreshold'] + 3
+  local adjust_bottom = bottom_threshold + 3
   local adjust_top = 4 + 2*tex.count['gre@count@stafflines']
 
-  -- compute additional spaces
-  additional_top_space = math.max(0, info.glyph_top - adjust_top - tex.count['gre@space@count@additionaltopspacethreshold']) * staffline_distance
-  additional_top_space_alt = math.max(0, info.glyph_top - adjust_top - tex.count['gre@space@count@additionaltopspacealtthreshold']) * staffline_distance
-  additional_top_space_nabc = math.max(0, info.glyph_top - adjust_top - tex.count['gre@space@count@additionaltopspacenabcthreshold']) * staffline_distance
-  debugmessage('adjust_additional_spaces', 'additional top space %spt alt %spt nabc %spt', additional_top_space/2^16, additional_top_space_alt/2^16, additional_top_space_nabc/2^16)
-  additional_bottom_space = math.max(0, adjust_bottom - info.glyph_bottom) * bottom_staffline_distance
-  debugmessage('adjust_additional_spaces', 'additional bottom space %spt', additional_bottom_space/2^16)
-  
-  if info.has_translation then
-      translation_height = tex.dimen['gre@dimen@maybe@translationheight']
-      debugmessage('adjust_additional_spaces', 'setting translation height to %spt', translation_height/2^16)
-  end
+  -- compute additional top/bottom spaces
+  local additional_top_space = math.max(0, info.glyph_top - adjust_top - top_threshold) * staffline_distance
+  local additional_top_space_alt = math.max(0, info.glyph_top - adjust_top - alt_threshold) * staffline_distance
+  local additional_top_space_nabc = math.max(0, info.glyph_top - adjust_top - nabc_threshold) * staffline_distance
+  local additional_bottom_space = math.max(0, adjust_bottom - info.glyph_bottom) * note_additional_space_lines_text
+
+  -- abovelinestext and translation heights
+  local abovelinestext_height = 0
   if info.has_abovelinestext then
-      abovelinestext_height = tex.dimen['gre@dimen@maybe@abovelinestextheight']
-      debugmessage('adjust_additional_spaces', 'setting abovelinestext height to %spt', abovelinestext_height/2^16)
+    abovelinestext_height = get_space('abovelinestextheight')
+  end
+  local translation_height = 0
+  if info.has_translation then
+    translation_height = get_space('translationheight')
   end
 
-  -- Recursively traverse the tree, making the following changes:
-  --   height of line increases by abovelinestext_height
-  --   height of line increases by additional_top_space
-  --   alt text shifts up by additional_top_space_alt
-  --   nabc text shifts up by additional_top_space_nabc
-  --   everything but translation and lyrics shifts up by additional_bottom_space
-  --   everything but lyrics shifts up by translation_height
-  --   height of line increases by additional_bottom_space
-  --   height of line increases by translation_height
+  -- per-line changes to other spaces
+  local extra_space_above_lines = get_space('spaceabovelines') - saved_dims['spaceabovelines']
+  local extra_above_lines_text_raise = get_space('abovelinestextraise') - saved_dims['abovelinestextraise']
+  local extra_space_lines_text = get_space('spacelinestext') - saved_dims['spacelinestext']
+  local extra_space_beneath_text = get_space('spacebeneathtext') - saved_dims['spacebeneathtext']
+
+  -- how much to raise/lower each part
+  local alt_raise = additional_top_space_alt + extra_above_lines_text_raise
+  local nabc_raise = additional_top_space_nabc + extra_above_lines_text_raise
+  local height_increase = abovelinestext_height + extra_space_above_lines + additional_top_space
+  local lyrics_lower = additional_bottom_space + extra_space_lines_text
+  local translation_lower = lyrics_lower + translation_height
+  local everything_raise = translation_lower + extra_space_beneath_text
   
+  -- Recursively traverse the tree, shifting parts up or down. The notes stay put for now.
   local function visit(cur)
     local changed = false
     local children = nil
@@ -787,27 +810,27 @@ local function adjust_additional_spaces(line, info)
     for child in traverse(children) do
       local child_part_attr = has_attribute(child, part_attr)
       if child_part_attr == part_alt then
-        debugmessage('adjust_additional_spaces', 'shift abovelinestext up by additionaltopspacealt (%spt)', additional_top_space_alt/2^16)
-        child.shift = child.shift - additional_top_space_alt
+        debugmessage('adjust_additional_spaces', 'shift abovelinestext up by %spt', alt_raise/2^16)
+        child.shift = child.shift - alt_raise
         changed = true
       elseif child_part_attr == part_nabc then
-        debugmessage('adjust_additional_spaces', 'shift nabc up by additionaltopspacenabc (%spt)', additional_top_space_nabc/2^16)
-        child.shift = child.shift - additional_top_space_nabc
+        debugmessage('adjust_additional_spaces', 'shift nabc up by %spt', nabc_raise/2^16)
+        child.shift = child.shift - nabc_raise
         changed = true
       elseif child_part_attr == part_stafflines then
-        debugmessage('adjust_additional_spaces', 'increase height by abovelinestextheight (%spt) + additionaltopspace (%spt)', abovelinestext_height/2^16, additional_top_space/2^16)
+        debugmessage('adjust_additional_spaces', 'increase height by %spt', height_increase/2^16)
         local g = node.new(glue, 0)
-        g.width = abovelinestext_height + additional_top_space
+        g.width = height_increase
         child.head = node.insert_before(child.head, child.head, g)
         child.height = child.height + g.width
         changed = true
       elseif child_part_attr == part_lyrics or child_part_attr == part_initial then
-        debugmessage('adjust_additional_spaces', 'shift lyrics/initial down by additionalbottomspace (%spt)', additional_bottom_space/2^16)
-        child.shift = child.shift + additional_bottom_space
+        debugmessage('adjust_additional_spaces', 'shift lyrics/initial down by %spt', lyrics_lower/2^16)
+        child.shift = child.shift + lyrics_lower
         changed = true
       elseif child_part_attr == part_translation then
-        debugmessage('adjust_additional_spaces', 'shift translation down by additionalbottomspace (%spt) + translationheight (%spt)', additional_bottom_space/2^16, translation_height/2^16)
-        child.shift = child.shift + additional_bottom_space + translation_height
+        debugmessage('adjust_additional_spaces', 'shift translation down by %spt', translation_lower/2^16)
+        child.shift = child.shift + translation_lower
         changed = true
       else
         local child_changed = visit(child)
@@ -825,13 +848,13 @@ local function adjust_additional_spaces(line, info)
 
   visit(line)
 
-  -- To fix the baseline, move everything up
+  -- To fix the baseline, move everything up by additional_bottom_space + translation_height
   local function shift_up(n)
     if n.id == rule then
       err("Can't raise/lower a rule (this shouldn't happen)")
     elseif n.id == hlist or n.id == vlist then
-      debugmessage('adjust_additional_spaces', 'shift node up by additionalbottomspace (%spt) + translationheight (%spt)', additional_bottom_space/2^16, translation_height/2^16)
-      n.shift = n.shift - additional_bottom_space - translation_height
+      debugmessage('adjust_additional_spaces', 'shift node up by %spt', everything_raise/2^16)
+      n.shift = n.shift - everything_raise
     elseif node.type(n.id) == 'disc' then
       for child in node.traverse(n.replace) do
         shift_up(child)
@@ -943,16 +966,20 @@ local function post_linebreak(h, groupcode, glyphes)
   -- Line height adjustment.
   if tex.count['gre@variableheightexpansion'] == 2 then -- uniform
     local info
+    local linenum = 1
     for line in traverse_id(hlist, h) do
-      info = compute_line_statistics(line, info)
+      info = compute_line_statistics(line, info, linenum)
+      linenum = linenum + 1
     end
     for line in traverse_id(hlist, h) do
       adjust_additional_spaces(line, info)
     end
   elseif tex.count['gre@variableheightexpansion'] == 3 then -- variable
+    local linenum = 1
     for line in traverse_id(hlist, h) do
       local info = compute_line_statistics(line)
-      adjust_additional_spaces(line, info)
+      adjust_additional_spaces(line, info, linenum)
+      linenum = linenum + 1
     end
   end
   
@@ -1501,7 +1528,7 @@ local function check_one_font_version(name)
     local fontversion = gregoriofont.shared.rawdata.metadata.version
     if fontversion and string.match(fontversion, "%d+%.%d+%.%d+") ~= string.match(internalversion, "%d+%.%d+%.%d+") then
       local fontname = gregoriofont.shared.rawdata.metadata.fontname
-      err("\nUncoherent file versions!\ngregoriotex.tex is version %s\nwhile %s.ttf is version %s\nplease reinstall one so that the\nversions match", string.match(internalversion, "%d+%.%d+%.%d+"), fontname, string.match(fontversion, "%d+%.%d+%.%d+"))
+      err("\nUncoherent file versions!\ngregoriotex.tex is version %s\nwhile %s is version %s\nplease reinstall one so that the\nversions match", string.match(internalversion, "%d+%.%d+%.%d+"), gregoriofont.filename, string.match(fontversion, "%d+%.%d+%.%d+"))
     end
   end
 end
@@ -1780,15 +1807,17 @@ local function adjust_line_height(inside_discretionary, for_next_line)
   end
 end
 
-local function save_dim(name, value, modifier)
-  saved_dims[name] = { value, modifier }
+local function save_dim(name, value)
+  debugmessage('save_dim', 'dim %s value %spt', name, tex.sp(value)/2^16)
+  saved_dims[name] = tex.sp(value)
 end
 
 local function save_count(name, value)
+  debugmessage('save_count', 'count %s value %s', name, value)
   saved_counts[name] = value
 end
 
-local function change_next_score_line_dim(line_expr, name, value, modifier)
+local function change_next_score_line_dim(line_expr, name, value)
   local linenum_str
   for linenum_str in string.gmatch(line_expr, "%s*([^,]+)%s*") do
     local linenum = tonumber(linenum_str)
@@ -1797,20 +1826,22 @@ local function change_next_score_line_dim(line_expr, name, value, modifier)
       line_dims = {}
       per_line_dims[linenum] = line_dims
     end
-    line_dims[name] = { value, modifier }
+    line_dims[name] = tex.sp(value)
+    debugmessage('per_line', 'line %s dim %s value %spt', linenum_str, name, tex.sp(value)/2^16)
   end
 end
 
 local function change_next_score_line_count(line_expr, name, value)
   local linenum_str
-  for linenum_str in string.gmatch(line_expr, "([^,]+)") do
+  for linenum_str in string.gmatch(line_expr, "%s*([^,]+)%s*") do
     local linenum = tonumber(linenum_str)
     local line_counts = per_line_counts[linenum]
     if line_counts == nil then
       line_counts = {}
       per_line_counts[linenum] = line_counts
     end
-    line_counts[name] = value
+    line_counts[name] = tonumber(value)
+    debugmessage('per_line', 'line %s count %s value %s', linenum_str, name, value)
   end
 end
 

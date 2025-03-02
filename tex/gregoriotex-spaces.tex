@@ -980,11 +980,6 @@
 \let\gre@pitch@cleftop\gre@pitch@dummy %
 \let\gre@pitch@clefbottom\gre@pitch@dummy %
 
-% \gre@space@dimen@abovelinestextheight and \gre@space@dimen@translationheight are macros, but Lua code can only read dimens
-\newdimen\gre@dimen@maybe@abovelinestextheight
-\newdimen\gre@dimen@maybe@translationheight
-\newdimen\gre@dimen@maybe@noteadditionalspacelinestext
-
 % #1 is the high height
 % #2 is the low height
 % #3 is 1 if there is a translation somewhere
@@ -992,19 +987,26 @@
 \def\gre@calculate@additionalspaces#1#2#3#4{%
   \gre@trace{gre@calculate@additionalspaces{#1}{#2}{#3}{#4}}%
   \ifnum\gre@variableheightexpansion>1\relax
-    \global\gre@dimen@maybe@abovelinestextheight=\gre@space@dimen@abovelinestextheight\relax
+    \gre@removespaceabove
     \global\gre@dimen@additionaltopspace=0pt\relax
     \global\gre@dimen@additionaltopspacealt=0pt\relax
     \global\gre@dimen@additionaltopspacenabc=0pt\relax
-    \ifgre@noteadditionalspacelinestext
-      \global\gre@dimen@maybe@noteadditionalspacelinestext=\gre@space@dimen@noteadditionalspacelinestext
-    \else
-      \global\gre@dimen@maybe@noteadditionalspacelinestext=\dimexpr(\gre@dimen@interstafflinedistancebase+\gre@dimen@stafflinethicknessbase)/2 * \gre@factor\relax
-    \fi
     \global\gre@dimen@additionalbottomspace=0pt\relax
-    \global\gre@dimen@maybe@translationheight=\gre@space@dimen@translationheight\relax
     \gre@removetranslationspace
-    \gre@removespaceabove
+    % Pass in dimensions and counts that are macros
+    \gre@luasavedim{abovelinestextheight}%
+    % \ifgre@noteadditionalspacelinestext is not accessible in Lua, so handle it here
+    \ifgre@noteadditionalspacelinestext
+      \gre@luasavedim{noteadditionalspacelinestext}%
+    \else
+      {\grechangedim{noteadditionalspacelinestext}{\the\dimexpr(\gre@dimen@interstafflinedistancebase+\gre@dimen@stafflinethicknessbase)/2 * \gre@factor\relax}{fixed}%
+       \gre@luasavedim{noteadditionalspacelinestext}}%
+    \fi
+    \gre@luasavedim{spaceabovelines}%
+    \gre@luasavedim{abovelinestextraise}%
+    \gre@luasavedim{spacelinestext}%
+    \gre@luasavedim{spacebeneathtext}%
+    \gre@luasavedim{translationheight}%
   \else
   \gre@num@max{#1}{\gre@pitch@cleftop}%
   \gre@count@temp@one=\numexpr(\gre@count@temp@one - \gre@pitch@adjust@top - \gre@space@count@additionaltopspacethreshold)\relax %
@@ -1757,16 +1759,42 @@
   \gre@trace@end%
 }%
 
+% Make a dim accessible in Lua code. Any scaling or inheriting is done
+% at the time of the expansion of \gre@luasavedim, not when the dim is
+% used in Lua.
+% #1: name of dim
+\def\gre@luasavedim#1{%
+  \gre@rubberpermit{#1}%
+  \ifgre@rubber%
+    \def\gre@prefix{skip}%
+  \else%
+    \def\gre@prefix{dimen}%
+  \fi%
+  \directlua{%
+    gregoriotex.save_dim(%
+      "\luatexluaescapestring{#1}",%
+      "\luatexluaescapestring{\csname gre@space@\gre@prefix @#1\endcsname}"%
+    )%
+  }%
+}%
+
 % #1 : line number
 % #2-#4 : same as #1-#3 of \grechangedim
 \def\grechangenextscorelinedim#1#2#3#4{%
-  \directlua{%
-    gregoriotex.change_next_score_line_dim(%
-      "\luatexluaescapestring{#1}",%
-      "\luatexluaescapestring{#2}",%
-      "\luatexluaescapestring{#3}",%
-      "\luatexluaescapestring{#4}"%
-    )%
+  {\grechangedim{#2}{#3}{#4}%
+   \gre@rubberpermit{#2}%
+   \ifgre@rubber%
+     \def\gre@prefix{skip}%
+   \else%
+     \def\gre@prefix{dimen}%
+   \fi%
+   \directlua{%
+     gregoriotex.change_next_score_line_dim(%
+       "\luatexluaescapestring{#1}",%
+       "\luatexluaescapestring{#2}",%
+       "\luatexluaescapestring{\csname gre@space@\gre@prefix @#2\endcsname}"%
+     )%
+   }%
   }%
 }%
 

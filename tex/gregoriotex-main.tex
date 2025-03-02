@@ -736,8 +736,7 @@
     + \gre@space@dimen@abovelinestextraise)\relax%
   \gre@debugmsg{spacing}{Raise alt text: \the\gre@dimen@temp@five}%
   \leavevmode\raise\gre@dimen@temp@five\hbox to 0pt{\gre@style@abovelinestext#1\endgre@style@abovelinestext\hss}%
-  \gre@attr@part=-"7FFFFFFF\relax % nil
-  \relax %
+  \unsetluatexattribute{\gre@attr@part}%
   \gre@trace@end%
 }%
 
