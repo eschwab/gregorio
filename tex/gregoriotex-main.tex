@@ -394,14 +394,12 @@
   \fi%
   \gre@debugmsg{annotation}{Width check completed.}%
   % Now compute the raise
-  \gre@dimen@temp@five = \dimexpr(\gre@dimen@textlower+\gre@space@dimen@initialraise)\relax%
+  \gre@dimen@temp@five = \dimexpr(\gre@space@dimen@spacebeneathtext+\gre@space@dimen@initialraise)\relax%
   \ifnum\gre@count@initialposition=0\relax
     \advance\gre@dimen@temp@five by 
       \dimexpr(\gre@dimen@staffheight
       + \gre@space@dimen@spacebeneathtext
-      + \gre@dimen@currenttranslationheight
-      + \gre@space@dimen@spacelinestext
-      + \gre@dimen@additionalbottomspace)\relax%
+      + \gre@space@dimen@spacelinestext)\relax%
   \fi % post_linebreak takes care of the other cases
   \ifcase\gre@count@initialanchor\relax
     % top
@@ -701,19 +699,14 @@
   \gre@debugmsg{spacing}{Raise alt text: \gre@space@dimen@abovelinestextraise}%
   \endgre@style@abovelinestext%
   \ifnum#2=0\relax%
-    \gre@dimen@temp@five=\gre@dimen@additionaltopspacealt\relax%
     \gre@attr@part=6\relax
   \else%
-    \gre@dimen@temp@five=\gre@dimen@additionaltopspacenabc\relax%
     \gre@attr@part=7\relax
   \fi%
   \gre@dimen@temp@five=\dimexpr(\gre@dimen@staffheight %
     + \gre@dimen@interstafflinespace %
     + \gre@space@dimen@spacebeneathtext %
-    + \gre@dimen@currenttranslationheight %
     + \gre@space@dimen@spacelinestext %
-    + \gre@dimen@additionalbottomspace %
-    + \gre@dimen@temp@five %
     + \gre@space@dimen@abovelinestextraise)\relax%
   \gre@debugmsg{spacing}{Raise alt text: \the\gre@dimen@temp@five}%
   \leavevmode\raise\gre@dimen@temp@five\hbox to 0pt{\gre@style@abovelinestext#1\endgre@style@abovelinestext\hss}%
@@ -759,7 +752,7 @@
   \setbox\gre@box@lines=\hbox to 0pt{%
     \vbox attr \gre@attrid@part=2 {%
       \gre@style@normalstafflines%
-      \vskip\glueexpr(\gre@dimen@additionaltopspace+\gre@space@skip@spaceabovelines+\gre@dimen@currentabovelinestextheight)\relax%
+      \vskip\gre@space@skip@spaceabovelines\relax%
       \gre@count@temp@one=0\relax
       \loop
         \ifgre@showlines %
@@ -771,7 +764,7 @@
         \ifnum\gre@count@temp@one<\gre@count@stafflines
           \kern\gre@dimen@interstafflinespace\relax
         \repeat
-      \kern\dimexpr(\gre@space@dimen@spacelinestext+\gre@dimen@additionalbottomspace+\gre@space@dimen@spacebeneathtext+\gre@dimen@currenttranslationheight)\relax%
+      \kern\dimexpr(\gre@space@dimen@spacelinestext+\gre@space@dimen@spacebeneathtext)\relax%
       \endgre@style@normalstafflines %
     }%
     \hss%
@@ -1152,9 +1145,6 @@
   % with some versions of LuaTeX, the \localrightbox and \localleftbox must be set empty in an environment with the good attributes set
   \gre@localleftbox{}%
   \gre@localrightbox{}%
-  \global\gre@dimen@currentabovelinestextheight=0pt\relax
-  \global\gre@dimen@currenttranslationheight=0pt\relax
-  \global\gre@dimen@textlower=\gre@space@dimen@spacebeneathtext\relax
   \gre@restorepenalties %
   \gre@dimen@temp@one=0pt\relax%
   \gre@dimen@temp@two=0pt\relax%

@@ -138,15 +138,6 @@
 %% Global distances
 %%%%%%%%%%%%%%%%%
 
-% textlower is the height of the separation between the bottom line (which is invisible : for the notes which are very low) and the bottom of the text
-\newdimen\gre@dimen@textlower\relax%
-\def\gre@calculate@textlower{%
-  \gre@trace{gre@calculate@textlower}%
-  \gre@dimen@textlower=\gre@space@dimen@spacebeneathtext\relax%
-  %\advance\gre@dimen@textlower by \translationheight
-  \gre@trace@end%
-}%
-
 % stafflinewidth is the width of a line of staff, this can vary, for example at the first line
 \newdimen\gre@dimen@stafflinewidth\relax%
 \def\gre@calculate@stafflinewidth{%
@@ -212,14 +203,12 @@
 \def\gre@calculate@constantglyphraise{%
   \gre@trace{gre@calculate@constantglyphraise}%
   \global\gre@dimen@constantglyphraise = \dimexpr((\gre@dimen@glyphraisebase * \gre@factor) %
-    + \gre@dimen@additionalbottomspace %
     + \gre@space@dimen@spacebeneathtext %
     + \gre@space@dimen@spacelinestext %
     + \gre@dimen@interstafflinespace %
     + \gre@dimen@interstafflinespace %
     + \gre@dimen@stafflineheight %
     + \gre@dimen@stafflineheight %
-    + \gre@dimen@currenttranslationheight %
     % an adjustment in the case of big lines
     + \gre@dimen@stafflinediff)\relax%
   \relax %
@@ -241,17 +230,15 @@
 % A routine that simply aggregates the above global space calculating routines so we can easily update all when needed.
 %% Note: It used to be that some distance calculating functions called others.  Since this can create problems with circularity if one is not careful, this is no longer the case.  Now all distance calculating functions simply calculate their respective distance.  This means that dependent distances are not necessarily recalculated when an individual distance is recalculated.  This function updates all global calculated distances and in the order needed for the dependencies.
 %% Dependencies:
-%% textlower: spacebeneathtext
 %% linewidth: hsize
 %% stafflinewidth: linewidth
 %% stafflineheight: stafflinefactor & gre@factor
 %% interstafflinespace: stafflineheight & gre@factor
 %% stafflinediff: stafflineheight & gre@factor
 %% staffheight: stafflineheight & interstafflinespace
-%% constantglyphraise: gre@factor, additionalbottomspace, spacebeneathtext, spacelinestext, interstafflinespace, stafflineheight, currenttranslationheight, stafflinediff
+%% constantglyphraise: gre@factor, spacebeneathtext, spacelinestext, interstafflinespace, stafflineheight, stafflinediff
 \def\gre@computespaces{%
   \gre@trace{gre@computespaces}%
-  \gre@calculate@textlower%
   \gre@calculate@linewidth%
   \gre@calculate@stafflinewidth%
   \gre@calculate@stafflineheight%
@@ -900,15 +887,6 @@
   \gre@trace@end%
 }%
 
-% two dimensions for the additionalspaces
-\newdimen\gre@dimen@additionalbottomspace\relax%
-% the one taken into account to adjust space between lines
-\newdimen\gre@dimen@additionaltopspace\relax%
-% the one taken into account for above lines text height
-\newdimen\gre@dimen@additionaltopspacealt\relax%
-% the one taken into account for above lines nabc height
-\newdimen\gre@dimen@additionaltopspacenabc\relax%
-
 \newcount\gre@space@count@additionaltopspacethreshold\relax%
 \gre@space@count@additionaltopspacethreshold=2
 
@@ -945,13 +923,6 @@
 
 \def\gre@calculate@additionalspaces{%
   \gre@trace{gre@calculate@additionalspaces}%
-  \global\gre@dimen@currentabovelinestextheight=0pt\relax
-  \global\gre@dimen@additionaltopspace=0pt\relax
-  \global\gre@dimen@additionaltopspacealt=0pt\relax
-  \global\gre@dimen@additionaltopspacenabc=0pt\relax
-  \global\gre@dimen@additionalbottomspace=0pt\relax
-  \global\gre@dimen@currenttranslationheight=0pt\relax
-  \global\gre@dimen@textlower=\gre@space@dimen@spacebeneathtext\relax
   % Pass in dimensions and counts that are macros
   \gre@luasavedim{abovelinestextheight}%
   % \ifgre@noteadditionalspacelinestext is not accessible in Lua, so handle it here
@@ -1021,9 +992,6 @@
   \gre@trace@end%
 }%
 
-% temporary value for space for the translation, beneath the text
-\newdimen\gre@dimen@currenttranslationheight\relax%
-
 %nextbegindifference is the begindifference of the next syllable
 \newskip\gre@skip@nextbegindifference\relax%
 
@@ -1064,9 +1032,7 @@
   \global\advance\gre@dimen@annotationtrueraise by %
     \dimexpr(\gre@dimen@staffheight %
     + \gre@space@dimen@spacebeneathtext %
-    + \gre@dimen@currenttranslationheight %
-    + \gre@space@dimen@spacelinestext %
-    + \gre@dimen@additionalbottomspace)\relax%
+    + \gre@space@dimen@spacelinestext)\relax%
   \gre@style@annotation%
   \global\advance\gre@dimen@annotationtrueraise by \gre@space@dimen@annotationraise\relax%
   \gre@debugmsg{annotation}{Added user raise.}%
@@ -1085,9 +1051,7 @@
   \global\advance\gre@dimen@commentarytrueraise by %
     \dimexpr(\gre@dimen@staffheight %
     + \gre@space@dimen@spacebeneathtext %
-    + \gre@dimen@currenttranslationheight %
     + \gre@space@dimen@spacelinestext %
-    + \gre@dimen@additionalbottomspace %
     + \gre@space@dimen@commentaryraise)\relax%
   \endgre@style@commentary%
   \gre@trace@end%
@@ -1451,9 +1415,6 @@
 % the calculated width of the initial (may be actual width of letter or be forced wider under certain conditions)
 \newdimen\gre@dimen@initialwidth\relax%
 \gre@dimen@initialwidth= 0 pt\relax%
-
-\newdimen\gre@dimen@currentabovelinestextheight\relax%
-\gre@dimen@currentabovelinestextheight = 0pt\relax%
 
 %% TODO: perhaps create a pair of functions which “reserve” and “release” the temporary registers in order to keep track of which ones are in use when.  There would also need to be a list of the registers currently in use.  The reserve function would then check the list to make sure the requested register isn’t already in use, throwing an error if it is and adding its name to the list if it isn’t.  It might also provide for an alias (via \let).  The release function would simply remove the register from the list of those in use.
 % Register allocation is an inherently global process in TeX.  Below are the registers used within calculations on a temporary basis.

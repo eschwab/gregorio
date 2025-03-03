@@ -576,9 +576,7 @@
   \gre@dimen@temp@five=\dimexpr(\gre@dimen@staffheight %
     + \gre@space@dimen@spacebeneathtext %
     + \gre@space@dimen@spacelinestext %
-    + \gre@dimen@interstafflinespace %
-    + \gre@dimen@additionalbottomspace %
-    + \gre@dimen@currenttranslationheight)\relax %
+    + \gre@dimen@interstafflinespace)\relax %
   \raise\gre@dimen@temp@five %
   \hbox to 0pt{%
     \gre@style@additionalstafflines %
@@ -597,8 +595,6 @@
   \gre@trace{gre@additionalbottomcustoslineend}%
   \gre@dimen@temp@five=\dimexpr(\gre@space@dimen@spacebeneathtext %
     + \gre@space@dimen@spacelinestext %
-    + \gre@dimen@additionalbottomspace %
-    + \gre@dimen@currenttranslationheight %
     - \gre@dimen@interstafflinespace %
     - \gre@dimen@stafflineheight)\relax %
   \raise\gre@dimen@temp@five %
@@ -622,9 +618,7 @@
   \gre@dimen@temp@five=\dimexpr(\gre@dimen@staffheight %
     + \gre@space@dimen@spacebeneathtext %
     + \gre@space@dimen@spacelinestext %
-    + \gre@dimen@interstafflinespace %
-    + \gre@dimen@additionalbottomspace %
-    + \gre@dimen@currenttranslationheight)\relax%
+    + \gre@dimen@interstafflinespace)\relax%
   \raise\gre@dimen@temp@five %
   \hbox to 0pt{%
     \gre@style@additionalstafflines %
@@ -643,8 +637,6 @@
   \gre@trace{gre@additionalbottomcustoslinemiddle}%
   \gre@dimen@temp@five=\dimexpr(\gre@space@dimen@spacebeneathtext %
     + \gre@space@dimen@spacelinestext %
-    + \gre@dimen@additionalbottomspace %
-    + \gre@dimen@currenttranslationheight %
     - \gre@dimen@interstafflinespace %
     - \gre@dimen@stafflineheight)\relax%
   \raise\gre@dimen@temp@five %
@@ -1629,18 +1621,14 @@
     + \gre@dimen@temp@four)\relax %
   \ifcase#1 % 0
     \gre@dimen@glyphraisevalue=%
-      \dimexpr(\gre@dimen@additionalbottomspace %
-      + \gre@space@dimen@spacebeneathtext %
+      \dimexpr(\gre@space@dimen@spacebeneathtext %
       + \gre@space@dimen@spacelinestext %
-      + \gre@dimen@currenttranslationheight %
       + \gre@count@stafflines\gre@dimen@interstafflinespace %
       + \gre@count@stafflines\gre@dimen@stafflineheight)\relax%
   \or % 1
     \gre@dimen@glyphraisevalue=%
-      \dimexpr(\gre@dimen@additionalbottomspace %
-      + \gre@space@dimen@spacebeneathtext %
+      \dimexpr(\gre@space@dimen@spacebeneathtext %
       + \gre@space@dimen@spacelinestext %
-      + \gre@dimen@currenttranslationheight %
       - \gre@dimen@interstafflinespace %
       - \gre@dimen@stafflineheight)\relax%
   \fi %
@@ -2567,10 +2555,8 @@
   \else %
     \setbox\gre@box@temp@width=\hbox{\gre@font@music\gre@char@bar@divisiomaior}%
     % we calculate the raise of the bar
-    \gre@dimen@temp@five=\dimexpr(\gre@dimen@additionalbottomspace %
-      + \gre@space@dimen@spacebeneathtext %
-      + \gre@space@dimen@spacelinestext %
-      + \gre@dimen@currenttranslationheight)\relax%
+    \gre@dimen@temp@five=\dimexpr(\gre@space@dimen@spacebeneathtext %
+      + \gre@space@dimen@spacelinestext)\relax%
     % we calculate the height of the bar
     \raise\gre@dimen@temp@five\hbox{\vrule height \gre@dimen@staffheight width \wd\gre@box@temp@width}%
   \fi %

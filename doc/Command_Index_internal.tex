@@ -105,9 +105,6 @@ Macro to calculate \verb=\gre@dimen@annotationtrueraise=.
 \macroname{\textbackslash gre@calculate@commentarytrueraise}{}{gregoriotex-spaces.tex}
 Macro to calculate \verb=\gre@dimen@commentarytrueraise=.
 
-\macroname{\textbackslash gre@calculate@textlower}{}{gregoriotex-spaces.tex}
-Calculates the value of \texttt{textlower}.  Default is \texttt{spacebeneathtext}.
-
 \macroname{\textbackslash gre@calculate@linewidth}{}{gregoriotex-spaces.tex}
 Calculates the line width.  Default is the width of the printable space (\verb=\hsize=).
 
@@ -127,7 +124,7 @@ Calculates a correction factor for when the staff lines are not their default th
 Calculates the total height of the staff.  Dependent on \texttt{stafflineheight} and \texttt{interstafflinespace}.
 
 \macroname{\textbackslash gre@calculate@constantglyphraise}{}{gregoriotex-spaces.tex}
-Calculates the baseline correction for the glyphs.  Dependent on \texttt{gre@factor}, \texttt{additionalbottomspace}, \texttt{spacebeneathtext}, \texttt{spacelinestext}, \texttt{interstafflinespace}, \texttt{stafflineheight}, \texttt{currenttranslationheight}, and \texttt{stafflinediff}.
+Calculates the baseline correction for the glyphs.  Dependent on \texttt{gre@factor}, \texttt{spacebeneathtext}, \texttt{spacelinestext}, \texttt{interstafflinespace}, \texttt{stafflineheight}, and \texttt{stafflinediff}.
 
 \macroname{\textbackslash gre@computespaces}{}{gregoriotex-spaces.tex}
 Aggregates all of the global distance calculations and calls them in the order needed to respect dependencies.
@@ -2104,32 +2101,12 @@ Width of the clef used to compute bolshift.
 \macroname{\textbackslash gre@dimen@constantglyphraise}{}{gregoriotex-spaces.tex}
 Dimension representing the space between the 0 of the gregorian fonts and the effective 0 of the TeX score.
 
-\macroname{\textbackslash gre@dimen@currenttranslationheight}{}{gregoriotex-spaces.tex}
-Dimension representing the space for the translation beneath the text.
-
 \macroname{\textbackslash gre@dimen@stafflinewidth}{}{gregoriotex-spaces.tex}
 Dimension representing the width of a line of staff.  Can vary, for
 example, at the first line.
 
 \macroname{\textbackslash gre@dimen@linewidth}{}{gregoriotex-spaces.tex}
 Dimension representing the width of the score (including initial).
-
-\macroname{\textbackslash gre@dimen@additionalbottomspace}{}{gregoriotex-spaces.tex}
-Dimension representing extra space below the staff needed for low notes.
-
-\macroname{\textbackslash gre@dimen@additionaltopspace}{}{gregoriotex-spaces.tex}
-Dimension representing extra space above the staff needed for high notes.
-
-\macroname{\textbackslash gre@dimen@additionaltopspacealt}{}{gregoriotex-spaces.tex}
-Dimension representing extra space above the staff needed for above lines text.
-
-\macroname{\textbackslash gre@dimen@additionaltopspacenabc}{}{gregoriotex-spaces.tex}
-Dimension representing extra space above the staff needed for nabc notation.
-
-\macroname{\textbackslash gre@dimen@textlower}{}{gregoriotex-spaces.tex}
-Dimension representing the height of the separation between the 0th
-line (which is invisible except for notes in the a or b position) and
-the bottom of the text.
 
 \macroname{\textbackslash gre@dimen@textaligncenter}{}{gregoriotex-spaces.tex}
 Dimension representing the width from the beginning of the letters in
@@ -2138,9 +2115,6 @@ neumes and syllables.
 
 \macroname{\textbackslash gre@dimen@initialwidth}{}{gregoriotex-spaces.tex}
 Dimension representing the width of the initial (and the space after).
-
-\macroname{\textbackslash gre@dimen@currentabovelinestextheight}{}{gregoriotex-spaces.tex}
-Dimension representing the space allocated above the lines for text.
 
 \macroname{\textbackslash gre@dimen@staffheight}{}{gregoriotex-spaces.tex}
 The total height of the staff including the width of the lines and the spaces between them.
