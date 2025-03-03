@@ -90,7 +90,6 @@
 
 \def\gre@newglyphcommon{%
   \gre@trace{gre@newglyphcommon}%
-  \global\advance\gre@attr@glyph@id by 1\relax %
   % first there is something we must do: setting \gre@lastoflinecount to 0 if its value is 2. The reason of this is that in ab(abzcd), we cannot let \grelastoflinecount set to 2 after the end of line... the only way I found to achieve it is to reset \grelastoflinecount to 0 after each glyph or bar.
   \ifnum\gre@lastoflinecount=2\relax %
     \global\gre@lastoflinecount=0\relax %
@@ -177,7 +176,6 @@
     \global\gre@firstglyphfalse%
   \fi%
   #6\relax %
-  \directlua{gregoriotex.adjust_line_height(\gre@insidediscretionary)}%
   \gre@endofglyphcommon %
   \relax%
 }%
@@ -877,7 +875,6 @@
   % So, at beginning of lines, we will have shifted left, and in middle of lines
   % we will have shifted right and left, thus cancelling... Very easy trick, but
   % took me years to find it!
-  \gre@debugmsg{bolshift}{Current glyph: \the\gre@attr@glyph@id}%
   % we only want to execute these shifts if the clef is being shown
   % if no clef is being shown, then there is no space under the clef for the
   % lyrics to invade

@@ -85,24 +85,8 @@ Macro holding the list of directories to be searched for scores.  \verb=\input@p
 \macroname{\textbackslash gre@calculate@constantglyphraise}{}{gregoriotex-spaces.tex}
 Macro to calculate \verb=\gre@constantglyphraise=
 
-\macroname{\textbackslash gre@addtranslationspace}{}{gregoriotex-spaces.tex}
-Macro to tell Gregorio to set space for the translation.
-
-\macroname{\textbackslash gre@removetranslationspace}{}{gregoriotexspaces.tex}
-Macro to tell Gregorio to remove the space allocated to the translation.
-
-\macroname{\textbackslash gre@calculate@additionalspaces}{\#1\#2\#3\#4}{gregoriotex-spaces.tex}
-Macro which calculates \verb=\gre@additionalbottomspace= and\\
-\verb=\gre@additionaltopspace=
-
-\begin{argtable}
-  \#1 & integer & the height number of the top pitch, including signs\\
-  \#2 & integer & the height number of the bottom pitch, including signs\\
-  \#3 & \texttt{0} & there is no translation line\\
-  & \texttt{1} & there is a translation line\\
-  \#4 & \texttt{0} & there is no above lines text\\
-  & \texttt{1} & there is above lines text
- \end{argtable}
+\macroname{\textbackslash gre@calculate@additionalspaces}{}{gregoriotex-spaces.tex}
+Macro which initializes various dimensions and counts used for variable line height computation.
 
 \macroname{\textbackslash gre@calculate@textaligncenter}{\#1\#2\#3\#4}{gregoriotex-spaces.tex}
 Macro for calculating \verb=\gre@textaligncenter=.
@@ -479,12 +463,6 @@ Macro called when no initial is being set.
 
 \macroname{\textbackslash gre@setinitial}{\#1}{gregoriotex-main.tex}
 Macro to set the initial in the score.
-
-\macroname{\textbackslash gre@addspaceabove}{}{gregoriotex-main.tex}
-Macro to increase the space above the lines to account for above lines text.
-
-\macroname{\textbackslash gre@removespaceabove}{}{gregoriotex-main.tex}
-Macro to decrease the space above the lines as there is no longer any above lines text.
 
 \macroname{\textbackslash gre@alteration}{\#1\#2\#3\#4\#5\#6}{gregoriotex-signs.tex}
 Macro to typeset an alteration.
@@ -1140,12 +1118,6 @@ Macro set to \verb=0= for full-syllable centering, \verb=1= for vowel centering 
 \macroname{\textbackslash gre@rightfill}{}{gregoriotex-main.tex}
 Macro set to \verb=\hfil= or \verb=\relax= depending on alignment choices.
 
-\macroname{\textbackslash gre@mark@abovelinestext}{}{gregoriotex-main.tex}
-Macro to set the point-and-click position for above lines text.
-
-\macroname{\textbackslash gre@mark@translation}{}{gregoriotex-main.tex}
-Macro to set the point-and-click position for translations.
-
 \macroname{\textbackslash gre@pitch@[a-n,p]}{}{gregoriotex-main.tex}
 Macros which map gabc pitch letters (the final part of the macro name) to the numerical value that Gregorio\TeX\ uses in processing note placement.
 
@@ -1277,15 +1249,8 @@ Alias for \verb=\resizebox=.
 \macroname{\textbackslash gre@dimension}{}{gregoriotex-spaces.tex}
 Workhorse function for setting distances in \verb=\grecreatedim= and \verb=\grechangedim=.
 
-\macroname{\textbackslash gre@changedimforline}{\#1\#2\#3}{gregoriotex-spaces.tex}
-Saves the current value of the dimension and then changes it.  The arguments
-are the same as \verb=\grechangedim=.  Used to temporarily change the dimension
-for a given line, which is restored at the next beginning of the next line.
-
-\macroname{\textbackslash gre@changecountforline}{\#1\#2}{gregoriotex-spaces.tex}
-Saves the current value of the count and then changes it.  The arguments
-are the same as \verb=\grechangeocount=.  Used to temporarily change the count
-for a given line, which is restored at the next beginning of the next line.
+\macroname{\textbackslash gre@luasavedim}{}{gregoriotex-spaces.tex}
+Makes a distance, which is a macro and therefore only visible in TeX code, also visible in Lua code.
 
 \macroname{\textbackslash gre@setstafflines}{\#1}{gregoriotex-main.tex}
 Sets the number of staff lines.
@@ -1412,12 +1377,6 @@ Puts the greater of its two integer arguments into \verb=\gre@count@temp@one=.
 
 \macroname{\textbackslash gre@evaluatenextsyllable}{\#1}{gregoriotex-syllable.tex}
 Evaluates its first argument as an advance computation against the next syllable.  Twiddles the \verb=ifgre@evaluatingnextsyllable= flag around evaluation of the macro argument.
-
-\macroname{\textbackslash gre@save@additionalspaces}{}{gregoriotex-spaces.tex}
-Macro to save the additional vertical spaces associated with the line (\texttt{additionalbottomspace}, \texttt{additionaltopspace}, \texttt{additionaltopspacealt}, \texttt{additionaltopspacenabc}, \texttt{currenttranslationheight}, \texttt{textlower}, \texttt{currentabovelinestextheight}, and \texttt{constantglyphraise}) so that they can be restored later.
-
-\macroname{\textbackslash gre@restore@additionalspaces}{}{gregoriotex-spaces.tex}
-Macro to restore the additional vertical spaces associated with the line from their saved values.
 
 \macroname{\textbackslash gre@clearsyllable}{\#1}{gregoriotex-spaces.tex}
 Prevents the current syllable from overlapping with the previous syllable.
@@ -1794,9 +1753,6 @@ A Lua\TeX\ attribute which indicates whether a syllable takes a dash if it ends 
 
 \macroname{\textbackslash gre@attr@center}{}{gregoriotex-main.tex}
 A Lua\TeX\ attribute which indicates the type of translation centering.
-
-\macroname{\textbackslash gre@attr@glyph@id}{}{gregoriotex-main.tex}
-A Lua\TeX\ attribute which identifies the glyph we are at.  Used for dynamic line spacing.
 
 \macroname{\textbackslash gre@attr@glyph@top}{}{gregoriotex-main.tex}
 A Lua\TeX\ attribute which identifies the high point of the glyph.  Used for dynamic line spacing.

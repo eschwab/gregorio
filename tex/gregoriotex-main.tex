@@ -100,7 +100,6 @@
 \newluatexattribute\GreScoreId %
 
 % attributes for tracking glyph heights
-\newluatexattribute\gre@attr@glyph@id %
 \newluatexattribute\gre@attr@glyph@top %
 \newluatexattribute\gre@attr@glyph@bottom %
 
@@ -667,24 +666,6 @@
 %% macro for putting text above lines for annotations and the like
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% set space above the text lines - almost the same as for the translation
-\def\gre@addspaceabove{%
-  \gre@trace{gre@addspaceabove}%
-  \gre@style@abovelinestext%
-  \global\gre@dimen@currentabovelinestextheight=\gre@space@dimen@abovelinestextheight\relax%
-  \endgre@style@abovelinestext%
-  \relax %
-  \gre@trace@end%
-}%
-
-% we don't need space above any more
-\def\gre@removespaceabove{%
-  \gre@trace{gre@removespaceabove}%
-  \global\gre@dimen@currentabovelinestextheight=0 sp%
-  \relax %
-  \gre@trace@end%
-}%
-
 % the code is a bit strange here: we always execute \gre@space@skip@spaceabovelines at the beginning of a glyph. This will:
 % - typeset the text above the lines if relevant, and making sure we execute it only once
 % - not do anything else
@@ -980,17 +961,13 @@
 }%
 
 % make this a count so that it can be read more easily in Lua
-\newcount\gre@variableheightexpansion\gre@variableheightexpansion=3\relax %
+\newcount\gre@variableheightexpansion\gre@variableheightexpansion=1\relax %
 \def\gresetlineheightexpansion#1{%
   \IfStrEqCase{#1}{%
-    {olduniform}%
-      {\gre@variableheightexpansion=0\relax }%
-    {oldvariable}%
-      {\gre@variableheightexpansion=1\relax }%
     {uniform}%
-      {\gre@variableheightexpansion=2\relax }%
+      {\gre@variableheightexpansion=0\relax }%
     {variable}%
-      {\gre@variableheightexpansion=3\relax }%
+      {\gre@variableheightexpansion=1\relax }%
     }[% all other cases
       \gre@error{Unrecognized option "#1" for \protect\gresetlineheightexpansion\MessageBreak Possible options are: 'uniform' and 'variable'}%
     ]%
@@ -1109,10 +1086,10 @@
 
 %macro called at the beginning of a score
 % #1 is the gabc score id
-% #2 is the high height
-% #3 is the low height
-% #4 is 1 if there is a translation somewhere
-% #5 is if 1 if we have space above the staff
+% #2 is the high height (currently ignored)
+% #3 is the low height (currently ignored)
+% #4 is 1 if there is a translation somewhere (currently ignored)
+% #5 is if 1 if we have space above the staff (currently ignored)
 % #6 is the point-and-click filename
 % #7 is the number of staff lines
 % #8 is to set the initial clef position
@@ -1123,7 +1100,6 @@
   \global\gre@dimen@morawidth=0pt\relax %
   \GreResetEolCustos%
   \gre@resetledgerlineheuristics%
-  \global\setluatexattribute\gre@attr@glyph@id{0}%
   \global\setluatexattribute\gre@attr@syllable@id{0}%
   \global\setluatexattribute\gre@attr@alteration@id{0}%
   \let\gre@pitch@cleftop\gre@pitch@dummy %
@@ -1142,13 +1118,10 @@
   \gre@attr@dash=0\relax %
   \gre@generatelines %
   \noindent%
-  \gre@calculate@additionalspaces{#2}{#3}{#4}{#5}%
+  \gre@calculate@additionalspaces
   #8%
   \directlua{
-    gregoriotex.at_score_beginning([[#1]], #2, #3, #4, #5,
-        \gre@pitch@adjust@top, \gre@pitch@adjust@bottom,
-        "\luatexluaescapestring{\gre@gregoriofontname}")
-    gregoriotex.adjust_line_height(1)
+    gregoriotex.at_score_beginning([[#1]], "\luatexluaescapestring{\gre@gregoriofontname}")
   }%
   %TODO do something like LaTeX's AtBeginDocument
   \ifdefined\optgabcAtScoreBeginning %
@@ -1179,9 +1152,9 @@
   % with some versions of LuaTeX, the \localrightbox and \localleftbox must be set empty in an environment with the good attributes set
   \gre@localleftbox{}%
   \gre@localrightbox{}%
-  \gre@calculate@additionalspaces{\gre@pitch@dummy}{\gre@pitch@dummy}{0}{0}%
-  \global\gre@dimen@currentabovelinestextheight=0 sp%
-  \gre@removetranslationspace %
+  \global\gre@dimen@currentabovelinestextheight=0pt\relax
+  \global\gre@dimen@currenttranslationheight=0pt\relax
+  \global\gre@dimen@textlower=\gre@space@dimen@spacebeneathtext\relax
   \gre@restorepenalties %
   \gre@dimen@temp@one=0pt\relax%
   \gre@dimen@temp@two=0pt\relax%
@@ -1195,7 +1168,6 @@
   \setbox\gre@box@annotation=\box\voidb@x%
   \setbox\gre@box@commentary=\box\voidb@x%
   \directlua{gregoriotex.at_score_end()}%
-  \unsetluatexattribute{\gre@attr@glyph@id}%
   \unsetluatexattribute{\gre@attr@glyph@top}%
   \unsetluatexattribute{\gre@attr@glyph@bottom}%
   \unsetluatexattribute{\gre@attr@dash}%
@@ -1203,7 +1175,6 @@
   \ifgre@justifylastline%
     \parfillskip=\gre@saved@parfillskip\relax%
   \fi %
-  \global\setluatexattribute\gre@attr@glyph@id{0}%
   \relax%
 }%
 

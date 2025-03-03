@@ -72,10 +72,8 @@ local center_attr = luatexbase.attributes['gre@attr@center']
 local startcenter = 1
 local endcenter   = 2
 
-local glyph_id_attr = luatexbase.attributes['gre@attr@glyph@id']
 local glyph_top_attr = luatexbase.attributes['gre@attr@glyph@top']
 local glyph_bottom_attr = luatexbase.attributes['gre@attr@glyph@bottom']
-local prev_line_id = nil
 
 local alteration_type_attr = luatexbase.attributes['gre@attr@alteration@type']
 local alteration_pitch_attr = luatexbase.attributes['gre@attr@alteration@pitch']
@@ -85,10 +83,6 @@ local syllable_id_attr = luatexbase.attributes['gre@attr@syllable@id']
 
 local cur_score_id = nil
 local score_inclusion = {}
-local line_heights = nil
-local new_line_heights = nil
-local score_heights = nil
-local new_score_heights = nil
 local saved_positions = nil
 local saved_lengths = nil
 local new_saved_lengths = nil
@@ -129,8 +123,6 @@ local number_to_letter = {
 }
 
 local capture_header_macro = {}
-local hashed_spaces = {}
-local space_hash = ''
 
 local dims = {}
 local per_line_dims = {}
@@ -246,12 +238,6 @@ local function is_greaux_write_needed()
       entries_changed(new_state_hashes, state_hashes) then
     return true
   end
-  for id, tab in pairs(new_line_heights) do
-    if keys_changed(tab, line_heights[id]) then return true end
-  end
-  for id, tab in pairs(line_heights) do
-    if keys_changed(tab, new_line_heights[id]) then return true end
-  end
   for id, tab in pairs(new_last_syllables) do
     if keys_changed(tab, last_syllables[id]) then return true end
   end
@@ -276,26 +262,11 @@ end
 
 local function write_greaux()
   if is_greaux_write_needed() then
-    -- only write this if heights change; since table ordering is not
-    -- predictable, this ensures a steady state if the heights are unchanged.
     local aux = io.open(auxname, 'w')
     if aux then
       log("Writing %s", auxname)
       local id, tab, id2, line, value
-      aux:write('return {\n ["line_heights"]={\n')
-      for id, tab in pairs(new_line_heights) do
-        aux:write(string.format('  ["%s"]={\n', id))
-        for id2, line in pairs(tab) do
-          if id2 == 'last' then
-            aux:write(string.format('   ["%s"]=%d,\n', id2, line))
-          else
-            aux:write(string.format('   [%d]={%d,%d,%d,%d,%d},\n', id2, line[1],
-                line[2], line[3], line[4], line[5]))
-          end
-        end
-        aux:write('  },\n')
-      end
-      aux:write(' },\n ["last_syllables"]={\n')
+      aux:write('return {\n ["last_syllables"]={\n')
       for id, tab in pairs(new_last_syllables) do
         aux:write(string.format('  ["%s"]={\n', id))
         for id2, value in pairs(tab) do
@@ -355,7 +326,7 @@ local function write_greaux()
       err("\n Unable to open %s", auxname)
     end
 
-    warn("Line heights, variable brace lengths, or soft flats/sharps may have changed. Rerun to fix.")
+    warn("Variable brace lengths or soft flats/sharps may have changed. Rerun to fix.")
   end
 end
 
@@ -389,14 +360,12 @@ local function init(arg, enable_height_computation)
   if lfs.isfile(auxname) then
     log("Reading %s", auxname)
     local score_info = dofile(auxname)
-    line_heights = score_info.line_heights or {}
     last_syllables = score_info.last_syllables or {}
     state_hashes = score_info.state_hashes or {}
     saved_lengths = score_info.saved_lengths or {}
     saved_newline_before_euouae = score_info.saved_newline_before_euouae or {}
     first_alterations = score_info.first_alterations or {}
   else
-    line_heights = {}
     last_syllables = {}
     state_hashes = {}
     saved_lengths = {}
@@ -405,7 +374,6 @@ local function init(arg, enable_height_computation)
   end
 
   if enable_height_computation then
-    new_line_heights = {}
     new_last_syllables = {}
     new_state_hashes = {}
 
@@ -454,7 +422,7 @@ end
 local function dump_nodes_helper(head, indent)
   local dots = string.rep('..', indent)
   for n in traverse(head) do
-    local ids = format("%s", has_attribute(n, glyph_id))
+    local ids = nil
     if n.id == hlist or n.id == vlist then
       log(dots .. "%s [%s] width=%.2fpt height=%.2fpt depth=%.2fpt shift=%.2fpt {%s}", node.type(n.id), n.subtype, n.width/2^16, n.height/2^16, n.depth/2^16, n.shift/2^16, ids)
     elseif n.id == rule then
@@ -721,12 +689,16 @@ local function compute_line_statistics(line, info)
       info.has_translation = true
     elseif has_attribute(n, part_attr, part_alt) or has_attribute(n, part_attr, part_nabc) then
       info.has_abovelinestext = true
-    elseif has_attribute(n, glyph_id_attr) then
-      if info.glyph_top == nil or has_attribute(n, glyph_top_attr) > info.glyph_top then
-        info.glyph_top = has_attribute(n, glyph_top_attr)
+    else
+      if has_attribute(n, glyph_top_attr) then
+        if info.glyph_top == nil or has_attribute(n, glyph_top_attr) > info.glyph_top then
+          info.glyph_top = has_attribute(n, glyph_top_attr)
+        end
       end
-      if info.glyph_bottom == nil or has_attribute(n, glyph_bottom_attr) < info.glyph_bottom then
-        info.glyph_bottom = has_attribute(n, glyph_bottom_attr)
+      if has_attribute(n, glyph_bottom_attr) then
+        if info.glyph_bottom == nil or has_attribute(n, glyph_bottom_attr) < info.glyph_bottom then
+          info.glyph_bottom = has_attribute(n, glyph_bottom_attr)
+        end
       end
     end
   end
@@ -921,41 +893,8 @@ local function post_linebreak(h, groupcode, glyphes)
               center_translation(centerstartnode, n, line.glue_set, line.glue_sign, line.glue_order)
             end
           end
- 
-          if new_score_heights then
-            local glyph_id = has_attribute(n, glyph_id_attr)
-            local glyph_top = has_attribute(n, glyph_top_attr) or 7 -- 'e' = \gre@pitch@dummy
-            local glyph_bottom = has_attribute(n, glyph_bottom_attr) or 7 -- 'e' = \gre@pitch@dummy
-            if glyph_id and glyph_id > prev_line_id then
-              if not line_id or glyph_id > line_id then
-                line_id = glyph_id
-              end
-              if not line_top or glyph_top > line_top then
-                line_top = glyph_top
-              end
-              if not line_bottom or glyph_bottom < line_bottom then
-                line_bottom = glyph_bottom
-              end
-            end
-          end
         end
 
-        -- Check if line has translation or abovelinestext
-        if new_score_heights then
-          for n in traverse_id(hlist, line.head) do
-            line_has_translation = line_has_translation or
-                has_attribute(n, part_attr, part_translation)
-            line_has_abovelinestext = line_has_abovelinestext or
-                has_attribute(n, part_attr, part_alt) or has_attribute(n, part_attr, part_nabc)
-          end
-        end
-        if line_id then
-          new_score_heights[prev_line_id] = { linenum, line_top, line_bottom,
-              line_has_translation and 1 or 0,
-              line_has_abovelinestext and 1 or 0 }
-          new_score_heights['last'] = prev_line_id
-          prev_line_id = line_id
-        end
         if new_score_last_syllables and syl_id then
           new_score_last_syllables[syl_id] = syl_id
         end
@@ -964,7 +903,7 @@ local function post_linebreak(h, groupcode, glyphes)
   end
   
   -- Line height adjustment.
-  if tex.count['gre@variableheightexpansion'] == 2 then -- uniform
+  if tex.count['gre@variableheightexpansion'] == 0 then -- uniform
     local info
     local linenum = 1
     for line in traverse_id(hlist, h) do
@@ -974,7 +913,7 @@ local function post_linebreak(h, groupcode, glyphes)
     for line in traverse_id(hlist, h) do
       adjust_additional_spaces(line, info)
     end
-  elseif tex.count['gre@variableheightexpansion'] == 3 then -- variable
+  elseif tex.count['gre@variableheightexpansion'] == 1 then -- variable
     local linenum = 1
     for line in traverse_id(hlist, h) do
       local info = compute_line_statistics(line)
@@ -1138,39 +1077,18 @@ local inside_score = false
 --- Start a score
 -- Prepare all variables for processing a new score and add our callbacks
 -- @param score_id score identifier
--- @param top_height height of highest score element
--- @param bottom_height height of lowest score element
--- @param has_translation does this score have a translation?
--- @param has_above_lines_text does this score have above lines text?
--- @param top_height_adj limit below which a top_height doesn't require adjustment
--- @param bottom_height_adj limit above which a bottom_height doesn't require adjustment
 -- @param score_font_name which font does this score use for the neumes
-local function at_score_beginning(score_id, top_height, bottom_height,
-    has_translation, has_above_lines_text, top_height_adj, bottom_height_adj,
-    score_font_name)
+local function at_score_beginning(score_id, score_font_name)
   first_line_prevdepth = tex.prevdepth -- used in adjust_glue
   inside_score = true
   local inclusion = score_inclusion[score_id] or 1
   score_inclusion[score_id] = inclusion + 1
   score_id = score_id..'.'..inclusion
   cur_score_id = score_id
-  if (top_height > top_height_adj or bottom_height < bottom_height_adj
-      or has_translation ~= 0 or has_above_lines_text ~= 0)
-      and tex.count['gre@variableheightexpansion'] == 1 then
-    score_heights = line_heights[score_id] or {}
-    if new_line_heights then
-      new_score_heights = {}
-      new_line_heights[score_id] = new_score_heights
-    end
-    prev_line_id = tex.getattribute(glyph_id_attr)
-  else
-    score_heights = nil
-    new_score_heights = nil
-  end
   local text_font = unsafe_get_font_by_id(font.current())
   local score_font = unsafe_get_font_by_id(font.id('gre@font@music'))
-  local state = md5.sumhexa(string.format('%s|%d|%s|%d|%s', text_font.name,
-      text_font.size, score_font.name, score_font.size, space_hash))
+  local state = md5.sumhexa(string.format('%s|%d|%s|%d', text_font.name,
+      text_font.size, score_font.name, score_font.size))
   score_last_syllables = last_syllables[score_id]
   if score_last_syllables and state_hashes[score_id] ~= state then
     score_last_syllables = nil
@@ -1727,86 +1645,6 @@ local function font_size()
   tex.print(string.format('%.2f', (unsafe_get_font_by_id(font.current()).size / 65536.0)))
 end
 
-local function adjust_line_height_internal(heights, inside_discretionary, for_next_line)
-  local backup_dims = saved_dims
-  local backup_counts = saved_counts
-  -- restore saved dims
-  local name, value
-  for name, value in pairs(saved_dims) do
-    tex.sprint(catcode_at_letter, string.format(
-        [[\grechangedim{%s}{%s}{%s}]], name, value[1], value[2]))
-  end
-  for name, value in pairs(saved_counts) do
-    tex.sprint(catcode_at_letter, string.format(
-        [[\grechangecount{%s}{%s}]], name, value))
-  end
-  -- clear saved dims
-  saved_dims = {}
-  saved_counts = {}
-  -- apply per-line dims
-  local line_dims = per_line_dims[heights[1]]
-  if line_dims ~= nil then
-    for name, value in pairs(line_dims) do
-      tex.sprint(catcode_at_letter, string.format(
-          [[\gre@changedimforline{%s}{%s}{%s}]], name, value[1], value[2]))
-    end
-  end
-  local line_counts = per_line_counts[heights[1]]
-  if line_counts ~= nil then
-    for name, value in pairs(line_counts) do
-      tex.sprint(catcode_at_letter, string.format(
-          [[\gre@changecountforline{%s}{%s}]], name, value))
-    end
-  end
-  -- recalculate spaces
-  tex.sprint(catcode_at_letter, string.format(
-      [[\gre@calculate@additionalspaces{%d}{%d}{%d}{%d}]],
-      heights[2], heights[3], heights[4], heights[5]))
-  if inside_discretionary == 0 then
-    tex.sprint(catcode_at_letter, [[\gre@updateleftbox ]])
-  end
-  if for_next_line then
-    -- IS THIS GOOD ENOUGH???
-    -- restore saved dims (from current line)
-    local name, value
-    for name, value in pairs(saved_dims) do
-      tex.sprint(catcode_at_letter, string.format(
-          [[\grechangedim{%s}{%s}{%s}]], name, value[1], value[2]))
-    end
-    for name, value in pairs(saved_counts) do
-      tex.sprint(catcode_at_letter, string.format(
-          [[\grechangecount{%s}{%s}]], name, value))
-    end
-    -- put previous saved dims back
-    saved_dims = backup_dims
-    saved_counts = backup_counts
-  end
-end
-
-local function adjust_line_height(inside_discretionary, for_next_line)
-  if score_heights then
-    local heights = nil
-    if for_next_line then
-      local last = score_heights['last']
-      if last then
-        -- Let target_id be the glyph_id of the last glyph on this line.
-        -- Then heights[target_id] is the information for the next line.
-        local target_id = tex.getattribute(glyph_id_attr)
-        while target_id <= last do
-          heights = score_heights[target_id]
-          if heights then break end
-          target_id = target_id + 1
-        end
-      end
-    else
-      heights = score_heights[tex.getattribute(glyph_id_attr)]
-    end
-    if heights then
-      adjust_line_height_internal(heights, inside_discretionary, for_next_line)
-    end
-  end
-end
-
 local function save_dim(name, value)
   debugmessage('save_dim', 'dim %s value %spt', name, tex.sp(value)/2^16)
   saved_dims[name] = tex.sp(value)
@@ -2027,21 +1865,6 @@ local function is_last_syllable_on_line()
   end
 end
 
-local function hash_spaces(name, value)
-  hashed_spaces[name] = value
-  local k, _
-  local keys = {}
-  for k,_ in pairs(hashed_spaces) do
-    table.insert(keys, k)
-  end
-  table.sort(keys)
-  local mash = ''
-  for _,k in ipairs(keys) do
-    mash = string.format('%s%s:%s|', mash, k, hashed_spaces[k])
-  end
-  space_hash = md5.sumhexa(mash)
-end
-
 local function is_first_alteration(next)
 -- Arguments
 --   next: 0 for current alteration, 1 for next alteration
@@ -2083,7 +1906,6 @@ gregoriotex.set_font_factor              = set_font_factor
 gregoriotex.def_symbol                   = def_symbol
 gregoriotex.font_size                    = font_size
 gregoriotex.direct_gabc                  = direct_gabc
-gregoriotex.adjust_line_height           = adjust_line_height
 gregoriotex.var_brace_len                = var_brace_len
 gregoriotex.save_length                  = save_length
 gregoriotex.width_to_bp                  = width_to_bp
@@ -2098,7 +1920,6 @@ gregoriotex.mode_part                    = mode_part
 gregoriotex.set_debug_string             = set_debug_string
 gregoriotex.late_save_position           = late_save_position
 gregoriotex.is_last_syllable_on_line     = is_last_syllable_on_line
-gregoriotex.hash_spaces                  = hash_spaces
 gregoriotex.save_dim                     = save_dim
 gregoriotex.save_count                   = save_count
 gregoriotex.change_next_score_line_dim   = change_next_score_line_dim
