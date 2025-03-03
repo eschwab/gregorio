@@ -207,7 +207,6 @@
 \def\gre@pitch@n{16}%
 \def\gre@pitch@p{17}%
 
-\def\gre@pitch@adjust@bottom{\the\numexpr(\gre@space@count@noteadditionalspacelinestextthreshold + \gre@pitch@a)\relax} %
 \let\gre@pitch@belowstaff\gre@pitch@c %
 \let\gre@pitch@ledger@below\gre@pitch@b %
 \let\gre@pitch@barvepisema\gre@pitch@c %
@@ -992,7 +991,6 @@
   \or % 1
     \gre@error{Invalid number of staff lines}%
   \or % 2
-    \let\gre@pitch@adjust@top\gre@pitch@f %
     \let\gre@pitch@abovestaff\gre@pitch@g %
     \let\gre@pitch@ledger@above\gre@pitch@h %
     \let\gre@pitch@raresign\gre@pitch@g %
@@ -1012,7 +1010,6 @@
     \let\gre@char@bar@divisiomaiordotted\GreCPDivisioMaiorDottedTwo %
     \let\gre@char@bar@divisiomaiordottedbacking\GreCPDivisioMaiorDottedBackingTwo %
   \or % 3
-    \let\gre@pitch@adjust@top\gre@pitch@h %
     \let\gre@pitch@abovestaff\gre@pitch@i %
     \let\gre@pitch@ledger@above\gre@pitch@j %
     \let\gre@pitch@raresign\gre@pitch@i %
@@ -1032,7 +1029,6 @@
     \let\gre@char@bar@divisiomaiordotted\GreCPDivisioMaiorDottedThree %
     \let\gre@char@bar@divisiomaiordottedbacking\GreCPDivisioMaiorDottedBackingThree %
   \or % 4
-    \let\gre@pitch@adjust@top\gre@pitch@j %
     \let\gre@pitch@abovestaff\gre@pitch@k %
     \let\gre@pitch@ledger@above\gre@pitch@l %
     \let\gre@pitch@raresign\gre@pitch@k %
@@ -1052,7 +1048,6 @@
     \let\gre@char@bar@divisiomaiordotted\GreCPDivisioMaiorDottedFour %
     \let\gre@char@bar@divisiomaiordottedbacking\GreCPDivisioMaiorDottedBackingFour %
   \or % 5
-    \let\gre@pitch@adjust@top\gre@pitch@l %
     \let\gre@pitch@abovestaff\gre@pitch@m %
     \let\gre@pitch@ledger@above\gre@pitch@n %
     \let\gre@pitch@raresign\gre@pitch@m %

@@ -899,25 +899,6 @@
 \newcount\gre@space@count@noteadditionalspacelinestextthreshold\relax%
 \gre@space@count@noteadditionalspacelinestextthreshold=2
 
-\def\gre@num@min#1#2{%
-  \gre@trace{gre@num@min{#1}{#2}}%
-  \ifnum#1 < #2\relax %
-    \gre@count@temp@one=#1\relax %
-  \else %
-    \gre@count@temp@one=#2\relax %
-  \fi %
-  \gre@trace@end%
-}%
-\def\gre@num@max#1#2{%
-  \gre@trace{gre@num@max{#1}{#2}}%
-  \ifnum#1 > #2\relax %
-    \gre@count@temp@one=#1\relax %
-  \else %
-    \gre@count@temp@one=#2\relax %
-  \fi %
-  \gre@trace@end%
-}%
-
 \let\gre@pitch@cleftop\gre@pitch@dummy %
 \let\gre@pitch@clefbottom\gre@pitch@dummy %
 

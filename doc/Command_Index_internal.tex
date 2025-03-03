@@ -1118,12 +1118,6 @@ Macro set to \verb=\hfil= or \verb=\relax= depending on alignment choices.
 \macroname{\textbackslash gre@pitch@[a-n,p]}{}{gregoriotex-main.tex}
 Macros which map gabc pitch letters (the final part of the macro name) to the numerical value that Gregorio\TeX\ uses in processing note placement.
 
-\macroname{\textbackslash gre@pitch@adjust@top}{}{gregoriotex-main.tex}
-If any note appears above this pitch, the space above the lines must be adjusted to account for it.
-
-\macroname{\textbackslash gre@pitch@adjust@bottom}{}{gregoriotex-main.tex}
-If any note appears below this pitch, the space below the lines must be adjusted to account for it.
-
 \macroname{\textbackslash gre@pitch@abovestaff}{}{gregoriotex-main.tex}
 The pitch above the staff.
 
@@ -1355,22 +1349,6 @@ Macro to make adjustments to \verb=nextbegindifference= in order to account for 
 
 \macroname{\textbackslash gre@punctummoraadjustment}{}{gregoriotex-spaces.tex}
 Macro to make adjustments to cursor position and \verb=previousenddifference= based on the presence of a punctum mora at the end of the last syllable.
-
-\macroname{\textbackslash gre@num@min}{\#1\#2}{gregoriotex-spaces.tex}
-Puts the lower of its two integer arguments into \verb=\gre@count@temp@one=.
-
-\begin{argtable}
-  \#1 & integer & the first value to compare\\
-  \#2 & integer & the second value to compare\\
-\end{argtable}
-
-\macroname{\textbackslash gre@num@max}{\#1\#2}{gregoriotex-spaces.tex}
-Puts the greater of its two integer arguments into \verb=\gre@count@temp@one=.
-
-\begin{argtable}
-  \#1 & integer & the first value to compare\\
-  \#2 & integer & the second value to compare\\
-\end{argtable}
 
 \macroname{\textbackslash gre@evaluatenextsyllable}{\#1}{gregoriotex-syllable.tex}
 Evaluates its first argument as an advance computation against the next syllable.  Twiddles the \verb=ifgre@evaluatingnextsyllable= flag around evaluation of the macro argument.
