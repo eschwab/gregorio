@@ -107,9 +107,6 @@ local function set_base_output_dir(new_dirname)
   base_output_dir = lfs.normalize(new_dirname)
 end
 
-local space_below_staff = 5
-local space_above_staff = 13
-
 local score_fonts = {}
 local symbol_fonts = {}
 local loaded_font_sizes = {}
@@ -124,7 +121,6 @@ local number_to_letter = {
 
 local capture_header_macro = {}
 
-local dims = {}
 local per_line_dims = {}
 local per_line_counts = {}
 local saved_dims = {}
@@ -422,7 +418,11 @@ end
 local function dump_nodes_helper(head, indent)
   local dots = string.rep('..', indent)
   for n in traverse(head) do
-    local ids = nil
+    local ids = format("g=%s,%s,a=%s,%s",
+                       has_attribute(n, glyph_top_attr),
+                       has_attribute(n, glyph_bottom_attr),
+                       has_attribute(n, alteration_pitch_attr),
+                       has_attribute(n, alteration_id_attr))
     if n.id == hlist or n.id == vlist then
       log(dots .. "%s [%s] width=%.2fpt height=%.2fpt depth=%.2fpt shift=%.2fpt {%s}", node.type(n.id), n.subtype, n.width/2^16, n.height/2^16, n.depth/2^16, n.shift/2^16, ids)
     elseif n.id == rule then
@@ -680,8 +680,8 @@ local function compute_line_statistics(line, info)
     info = {
       has_translation = false,
       has_abovelinestext = false,
-      line_top = 7, -- e = \gre@pitch@dummy
-      line_bottom = 7 -- e = \gre@pitch@dummy
+      glyph_top = 7, -- e = \gre@pitch@dummy
+      glyph_bottom = 7 -- e = \gre@pitch@dummy
     }
   end
   for n in traverse(line.head) do
@@ -850,11 +850,6 @@ local function post_linebreak(h, groupcode, glyphes)
   -- TODO: to be changed according to the font
   local lastseennode            = nil
   local centerstartnode         = nil
-  local line_id                 = nil
-  local line_top                = nil
-  local line_bottom             = nil
-  local line_has_translation    = false
-  local line_has_abovelinestext = false
   local linenum                 = 0
   local syl_id                  = nil
   
@@ -876,11 +871,6 @@ local function post_linebreak(h, groupcode, glyphes)
         linenum = linenum + 1
         debugmessage('linesglues', 'line %d: %s factor %.0f%%', linenum, glue_sign_name[line.glue_sign], line.glue_set*100)
         centerstartnode = nil
-        line_id = nil
-        line_top = nil
-        line_bottom = nil
-        line_has_translation = false
-        line_has_abovelinestext = false
 
         for n in traverse_id(hlist, line.head) do
           syl_id = has_attribute(n, syllable_id_attr) or syl_id

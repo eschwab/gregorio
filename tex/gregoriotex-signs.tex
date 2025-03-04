@@ -668,7 +668,9 @@
 \def\gre@custosalteration#1#2{%
   \gre@trace{gre@custosalteration{#1}{#2}}%
   \ifgre@usecustosalteration %
-    \IfStrEq{#2}{}{}{\csname Gre#2\endcsname{#1}{0}{}{}{}}%
+    \IfStrEq{#2}{}{}{%
+      \GreGlyphHeights{#1}{#1}%
+      \csname Gre#2\endcsname{#1}{0}{}{}{}}%
   \fi %
   \gre@trace@end%
 }%
