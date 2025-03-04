@@ -6,7 +6,6 @@ As of v3.0.0 this project adheres to [Semantic Versioning](http://semver.org/). 
 ### Added
 - Added new option `\gresetlastline{trimmed}`, which sets the last line ragged and also trims the staff lines. See [#1418](https://github.com/gregorio-project/gregorio/issues/1418).
 
-
 ## [6.1.0] - 2025-02-28
 ### Fixed
 - Multiple Scribus render frames were all using the same file name, which would result in the same score appearing in all render frames.  This change makes the score files use an available Scribus variable to force multiple file names.
