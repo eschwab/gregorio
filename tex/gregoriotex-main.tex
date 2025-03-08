@@ -136,11 +136,7 @@
 }%
 
 \RequireLuaModule{gregoriotex}%
-\ifcsname greskipheightcomputation\endcsname %
-  \directlua{gregoriotex.init(arg, false)}%
-\else %
-  \directlua{gregoriotex.init(arg, true)}%
-\fi %
+\directlua{gregoriotex.init(arg)}%
 \directlua{gregoriotex.set_debug_string([[\gre@debug]])}%
 
 \xdef\gre@gregoriotexluaversion{\directlua{tex.write(gregoriotex.get_gregoriotexluaversion())}}%

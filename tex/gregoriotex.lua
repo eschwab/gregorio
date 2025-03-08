@@ -326,7 +326,7 @@ local function write_greaux()
   end
 end
 
-local function init(arg, enable_height_computation)
+local function init(arg)
   -- is there a better way to get the output directory?
   local outputdir = nil
   for k,v in pairs(arg) do
@@ -369,29 +369,22 @@ local function init(arg, enable_height_computation)
     first_alterations = {}
   end
 
-  if enable_height_computation then
-    new_last_syllables = {}
-    new_state_hashes = {}
+  new_last_syllables = {}
+  new_state_hashes = {}
 
-    local mcb_version = luatexbase.get_module_version and
-        luatexbase.get_module_version('luatexbase-mcb') or 9999
-    if mcb_version and mcb_version > 0.6 then
-      luatexbase.add_to_callback('finish_pdffile', write_greaux,
-          'gregoriotex.write_greaux')
-    else
-      -- The version of luatexbase in TeX Live 2014 does not support it, and
-      -- luatexbase prevents a direct call to callback.register.  Because of
-      -- this, we lose the LuaTeX statistics and "output written to" messages,
-      -- but I know of no other workaround.
-
-      luatexbase.add_to_callback('stop_run', write_greaux,
-          'gregoriotex.write_greaux')
-    end
+  local mcb_version = luatexbase.get_module_version and
+      luatexbase.get_module_version('luatexbase-mcb') or 9999
+  if mcb_version and mcb_version > 0.6 then
+    luatexbase.add_to_callback('finish_pdffile', write_greaux,
+        'gregoriotex.write_greaux')
   else
-    warn('Height computation has been skipped.  Gregorio will use '..
-        'previously computed values if available but will not recompute '..
-        'line heights.  Remove or undefine \\greskipheightcomputation to '..
-        'resume height computation.')
+    -- The version of luatexbase in TeX Live 2014 does not support it, and
+    -- luatexbase prevents a direct call to callback.register.  Because of
+    -- this, we lose the LuaTeX statistics and "output written to" messages,
+    -- but I know of no other workaround.
+
+    luatexbase.add_to_callback('stop_run', write_greaux,
+        'gregoriotex.write_greaux')
   end
   saved_positions = {}
   new_saved_lengths = {}
