@@ -124,7 +124,6 @@ local capture_header_macro = {}
 local per_line_dims = {}
 local per_line_counts = {}
 local saved_dims = {}
-local saved_counts = {}
 
 local catcode_at_letter = luatexbase.catcodetables['gre@atletter']
 
@@ -1105,10 +1104,9 @@ local function at_score_end()
   per_line_dims = {}
   per_line_counts = {}
   saved_dims = {}
-  saved_counts = {}
 end
 
---- Toggle the state of GretorioTeX callbacks.
+--- Toggle the state of GregorioTeX callbacks.
 -- Our callbacks can affect fancyhdr's ability to create multi-line headers/footers
 -- By adding this function to fancyhdr's before and after hooks, our callbacks are removed
 -- while processing headers/footers and then reinstated for the rest of the score.
@@ -1633,13 +1631,7 @@ local function save_dim(name, value)
   saved_dims[name] = tex.sp(value)
 end
 
-local function save_count(name, value)
-  debugmessage('save_count', 'count %s value %s', name, value)
-  saved_counts[name] = value
-end
-
 local function change_next_score_line_dim(line_expr, name, value)
-  local linenum_str
   for linenum_str in string.gmatch(line_expr, "%s*([^,]+)%s*") do
     local linenum = tonumber(linenum_str)
     local line_dims = per_line_dims[linenum]
@@ -1653,7 +1645,6 @@ local function change_next_score_line_dim(line_expr, name, value)
 end
 
 local function change_next_score_line_count(line_expr, name, value)
-  local linenum_str
   for linenum_str in string.gmatch(line_expr, "%s*([^,]+)%s*") do
     local linenum = tonumber(linenum_str)
     local line_counts = per_line_counts[linenum]
@@ -1904,7 +1895,6 @@ gregoriotex.set_debug_string             = set_debug_string
 gregoriotex.late_save_position           = late_save_position
 gregoriotex.is_last_syllable_on_line     = is_last_syllable_on_line
 gregoriotex.save_dim                     = save_dim
-gregoriotex.save_count                   = save_count
 gregoriotex.change_next_score_line_dim   = change_next_score_line_dim
 gregoriotex.change_next_score_line_count = change_next_score_line_count
 gregoriotex.set_base_output_dir          = set_base_output_dir

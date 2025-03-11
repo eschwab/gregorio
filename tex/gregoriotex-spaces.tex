@@ -1590,6 +1590,9 @@
 % #1 : line number
 % #2-#4 : same as #1-#3 of \grechangedim
 \def\grechangenextscorelinedim#1#2#3#4{%
+  \IfStrEqCase{#2}{{abovelinestextheight}{}{noteadditionalspacelinestext}{}{spaceabovelines}{}{abovelinestextraise}{}{spacelinestext}{}{spacebeneathtext}{}{translationheight}{}}[%
+    \gre@error{Unrecognized option "#2" for \protect\grechangenextscorelinedim\MessageBreak Possible options are: 'abovelinestextraise', 'noteadditionalspacelinestext', 'spaceabovelines', 'spacebeneathtext', 'spacelinestext', 'translationheight'}%
+  ]%
   {\grechangedim{#2}{#3}{#4}%
    \gre@rubberpermit{#2}%
    \ifgre@rubber%
@@ -1610,6 +1613,9 @@
 % #1 : line number
 % #2-#3 : same as #1-#2 of \grechangecount
 \def\grechangenextscorelinecount#1#2#3{%
+  \IfStrEqCase{#2}{{additionaltopspacethreshold}{}{additionaltopspacealtthreshold}{}{additionaltopspacenabcthreshold}{}{noteadditionalspacelinestextthreshold}{}}[%
+    \gre@error{Unrecognized option "#2" for \protect\grechangenextscorelinecount\MessageBreak Possible options are: 'additionaltopspacethreshold', 'additionaltopspacealtthreshold', 'additionaltopspacenabcthreshold', 'noteadditionalspacelinestextthreshold'}%
+  ]%
   \directlua{%
     gregoriotex.change_next_score_line_count(%
       "\luatexluaescapestring{#1}",%
