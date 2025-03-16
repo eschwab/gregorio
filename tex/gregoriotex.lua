@@ -526,6 +526,7 @@ local function adjust_fullwidth (line)
         debugmessage("adjust_fullwidth", "commentary width %spt -> %spt", child.width/2^16, line_width/2^16)
         child.width = line_width
         local new = node.hpack(child.head, line_width, 'exactly')
+        new.shift = child.shift
         cur.head = node.insert_before(cur.head, child, new)
         cur.head = node.remove(cur.head, child)
       elseif has_attribute(child, part_attr, part_stafflines) then
@@ -755,6 +756,7 @@ local function adjust_additional_spaces(line, info, linenum)
   local extra_space_beneath_text = get_space('spacebeneathtext') - saved_dims['spacebeneathtext']
 
   -- how much to raise/lower each part
+  local commentary_raise = additional_top_space_alt
   local alt_raise = additional_top_space_alt + extra_above_lines_text_raise
   local nabc_raise = additional_top_space_nabc + extra_above_lines_text_raise
   local height_increase = abovelinestext_height + extra_space_above_lines + additional_top_space
@@ -773,7 +775,11 @@ local function adjust_additional_spaces(line, info, linenum)
     end
     for child in traverse(children) do
       local child_part_attr = has_attribute(child, part_attr)
-      if child_part_attr == part_alt then
+      if child_part_attr == part_commentary then
+        debugmessage('adjust_additional_spaces', 'shift commentary up by %spt', commentary_raise/2^16)
+        child.shift = child.shift - commentary_raise
+        changed = true
+      elseif child_part_attr == part_alt then
         debugmessage('adjust_additional_spaces', 'shift abovelinestext up by %spt', alt_raise/2^16)
         child.shift = child.shift - alt_raise
         changed = true
@@ -839,6 +845,7 @@ end
 -- in each function we check if we really are inside a score,
 -- which we can see with the dash_attr being set or not
 local function post_linebreak(h, groupcode, glyphes)
+  --dump_nodes(h)
   -- TODO: to be changed according to the font
   local lastseennode            = nil
   local centerstartnode         = nil

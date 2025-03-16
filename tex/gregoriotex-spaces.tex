@@ -1027,13 +1027,13 @@
 %This function sets the true raises of the commentary (it has to be called just as the boxes are placed in order to make sure that the values are all correct)
 \def\gre@calculate@commentarytrueraise{%
   \gre@trace{gre@calculate@commentarytrueraise}%
-  \gre@style@commentary%
   \gre@debugmsg{commentary}{Calculating the raise.}%
   \global\advance\gre@dimen@commentarytrueraise by %
     \dimexpr(\gre@dimen@staffheight %
     + \gre@space@dimen@spacebeneathtext %
-    + \gre@space@dimen@spacelinestext %
-    + \gre@space@dimen@commentaryraise)\relax%
+    + \gre@space@dimen@spacelinestext)\relax
+  \gre@style@commentary
+  \global\advance\gre@dimen@commentarytrueraise by \gre@space@dimen@commentaryraise
   \endgre@style@commentary%
   \gre@trace@end%
 }%
