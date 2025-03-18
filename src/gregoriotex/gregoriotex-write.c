@@ -4701,9 +4701,11 @@ void gregoriotex_write_score(FILE *const f, gregorio_score *const score,
     }
     fprintf(f, "\\GreBeginScore{%s}{%d}{%d}{%d}{%d}{%s}{%u}"
             "{\\GreInitialClefPosition{%d}{%d}}%%\n",
-            digest_to_hex(score->digest), status.top_height,
-            status.bottom_height, bool_to_int(status.translation),
-            bool_to_int(status.abovelinestext),
+            digest_to_hex(score->digest),
+            status.top_height, /* DEPRECATED: these arguments can be deleted */
+            status.bottom_height, /* DEPRECATED */
+            bool_to_int(status.translation), /* DEPRECATED */
+            bool_to_int(status.abovelinestext), /* DEPRECATED */
             point_and_click_filename? point_and_click_filename : "",
             score->staff_lines, clef.line, clef.secondary_line);
     if (score->nabc_lines) {

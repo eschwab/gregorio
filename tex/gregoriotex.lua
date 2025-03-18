@@ -1066,8 +1066,7 @@ local inside_score = false
 --- Start a score
 -- Prepare all variables for processing a new score and add our callbacks
 -- @param score_id score identifier
--- @param score_font_name which font does this score use for the neumes
-local function at_score_beginning(score_id, score_font_name)
+local function at_score_beginning(score_id)
   first_line_prevdepth = tex.prevdepth -- used in adjust_glue
   inside_score = true
   local inclusion = score_inclusion[score_id] or 1
