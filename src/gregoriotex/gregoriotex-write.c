@@ -4700,19 +4700,20 @@ void gregoriotex_write_score(FILE *const f, gregorio_score *const score,
         clef = score->first_voice_info->initial_clef;
     }
     /* After removing deprecated arguments, this will become:
-    fprintf(f, "\\GreBeginScore{%s}{%s}{%u}{\\GreInitialClefPosition{%d}{%d}}%%\n",
+    fprintf(f, "\\GreBeginScore{%s}{%s}{%u}{}%%\n",
             digest_to_hex(score->digest),
             point_and_click_filename? point_and_click_filename : "",
-            score->staff_lines, clef.line, clef.secondary_line); */
+            score->staff_lines); */
     fprintf(f, "\\GreBeginScore{%s}{%d}{%d}{%d}{%d}{%s}{%u}"
-            "{\\GreInitialClefPosition{%d}{%d}}%%\n",
+            "{\\GreInitialClefPosition{%d}{%d}}%%\n", /* DEPRECATED */
             digest_to_hex(score->digest),
             status.top_height, /* DEPRECATED */
             status.bottom_height, /* DEPRECATED */
             bool_to_int(status.translation), /* DEPRECATED */
             bool_to_int(status.abovelinestext), /* DEPRECATED */
             point_and_click_filename? point_and_click_filename : "",
-            score->staff_lines, clef.line, clef.secondary_line);
+            score->staff_lines,
+            clef.line, clef.secondary_line); /* DEPRECATED */
     if (score->nabc_lines) {
         fprintf(f, "\\GreScoreNABCLines{%d}", (int)score->nabc_lines);
     }

@@ -300,13 +300,8 @@
   \gre@trace@end%
 }%
 
-\def\GreInitialClefPosition#1#2{%
-  \gre@trace{GreInitialClefPosition{#1}{#2}}%
-  \ifgre@showclef %
-    \gre@save@clefextrema{#1}{#2}%
-  \fi %
-  \gre@trace@end%
-}%
+% DEPRECATED
+\def\GreInitialClefPosition#1#2{}%
 
 % macro that typesets the clef
 % arguments are :

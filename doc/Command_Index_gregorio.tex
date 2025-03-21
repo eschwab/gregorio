@@ -53,8 +53,7 @@ Macro to start a score.
       & 1 & there is above lines text somewhere in the score\\
   \#6 & string  & the absolute filename of the gabc file if point-and-click is enabled\\
   \#7 & integer & the number of staff lines\\
-  \#8 & \TeX\ code & macros to run before the score (\eg, setting clef
-                     extrema)\\
+  \#8 & \TeX\ code & macros to run before the score\\
 \end{argtable}
 
 \macroname{\textbackslash GreEndScore}{}{gregoriotex-main.tex}
@@ -709,7 +708,7 @@ Same as \verb=\GreDivisioMinor= except inside a syllable.
 Same as \verb=\GreDominica= except inside a syllable.
 
 \macroname{\textbackslash GreInitialClefPosition}{\#1\#2}{gregoriotex-signs.tex}
-Saves the extrema of the initial clef.
+Saves the extrema of the initial clef (DEPRECATED).
 
 \begin{argtable}
   \#1 & integer & the line of the primary clef (1 is the bottom line)\\
