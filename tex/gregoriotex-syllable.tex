@@ -114,6 +114,8 @@
 
 \def\gre@endofglyphcommon{%
   \gre@trace{gre@endofglyphcommon}%
+  \global\unsetluatexattribute{\gre@attr@glyph@top}%
+  \global\unsetluatexattribute{\gre@attr@glyph@bottom}%
   \ifgre@endofscore %
     \gre@penalty{\the\gre@space@count@finalpenalty}%
     \gre@localleftbox{}%
