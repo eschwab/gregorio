@@ -712,17 +712,18 @@ local function post_linebreak(h, groupcode, glyphes)
   local syl_id                  = nil
   -- we explore the lines
   for line in traverse(h) do
+    -- Remove a line if it has two or fewer hboxes (one for the stafflines, one for the clef)
+    -- Exception: Don't remove the first line
     if line.id == glue then
       if line.next ~= nil and line.next.id == hlist
           and has_attribute(line.next, dash_attr)
-          and count(hlist, line.next.head) <= 2 then
-        --log("eating glue")
+          and linenum > 0 and count(hlist, line.next.head) <= 2 then
+        debugmessage('linesglues', 'deleting glue above empty line')
         h, line = remove(h, line)
       end
     elseif line.id == hlist and has_attribute(line, dash_attr) then
-      -- the next two lines are to remove the dumb lines
-      if count(hlist, line.head) <= 2 then
-        --log("eating line")
+      if linenum > 0 and count(hlist, line.head) <= 2 then
+        debugmessage('linesglues', 'deleting empty line')
         h, line = remove(h, line)
       else
         linenum = linenum + 1
@@ -861,8 +862,7 @@ local function post_linebreak(h, groupcode, glyphes)
   end
 
   --dump_nodes(h)
-  -- due to special cases, we don't return h here (see comments in bug #20974)
-  return true
+  return h
 end
 
 -- In gregoriotex, hyphenation is made by the process function, so TeX hyphenation
