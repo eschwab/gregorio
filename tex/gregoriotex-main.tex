@@ -84,6 +84,7 @@
 
 % an attribute to mark various parts of the score
 % 1 = commentary, 2 = stafflines, 3 = initial
+% 4 = lyrics, 5 = translation, 6 = alt, 7 = nabc
 \newluatexattribute\gre@attr@part%
   \edef\gre@attrid@part{\the\allocationnumber}
 
@@ -99,7 +100,6 @@
 \newluatexattribute\GreScoreId %
 
 % attributes for tracking glyph heights
-\newluatexattribute\gre@attr@glyph@id %
 \newluatexattribute\gre@attr@glyph@top %
 \newluatexattribute\gre@attr@glyph@bottom %
 
@@ -110,13 +110,10 @@
 
 % Alterations are numbered consecutively starting from 1. If an
 % alteration is set twice, once for measurement and once for printing,
-% they have the same id (unlike glyph ids).
+% they have the same id.
 \newluatexattribute\gre@attr@alteration@id %
 
-% The pitch and type of an alteration. If an alteration has a glyph
-% id, then \gre@attr@alteration@pitch = \gre@attr@glyph@top
-% = \gre@attr@glyph@bottom, but we can't use the latter because we
-% also keep track of custos alterations, which don't have glyph ids.
+% The pitch and type of an alteration.
 \newluatexattribute\gre@attr@alteration@pitch
   \edef\gre@attrid@alteration@pitch{\the\allocationnumber}%
 \newluatexattribute\gre@attr@alteration@type % see \gre@alteration for codes
@@ -139,11 +136,7 @@
 }%
 
 \RequireLuaModule{gregoriotex}%
-\ifcsname greskipheightcomputation\endcsname %
-  \directlua{gregoriotex.init(arg, false)}%
-\else %
-  \directlua{gregoriotex.init(arg, true)}%
-\fi %
+\directlua{gregoriotex.init(arg)}%
 \directlua{gregoriotex.set_debug_string([[\gre@debug]])}%
 
 \xdef\gre@gregoriotexluaversion{\directlua{tex.write(gregoriotex.get_gregoriotexluaversion())}}%
@@ -207,7 +200,6 @@
 \def\gre@pitch@n{16}%
 \def\gre@pitch@p{17}%
 
-\def\gre@pitch@adjust@bottom{\the\numexpr(\gre@space@count@noteadditionalspacelinestextthreshold + \gre@pitch@a)\relax} %
 \let\gre@pitch@belowstaff\gre@pitch@c %
 \let\gre@pitch@ledger@below\gre@pitch@b %
 \let\gre@pitch@barvepisema\gre@pitch@c %
@@ -282,17 +274,6 @@
   \fi %
   %%
   \GreResetEolCustos\relax %
-  \gre@trace@end%
-}%
-
-\def\gre@mark@translation{%
-  \gre@trace{gre@mark@translation}%
-  \directlua{gregoriotex.mark_translation()}%
-  \gre@trace@end%
-}%
-\def\gre@mark@abovelinestext{%
-  \gre@trace{gre@mark@abovelinestext}%
-  \directlua{gregoriotex.mark_abovelinestext()}%
   \gre@trace@end%
 }%
 
@@ -392,14 +373,12 @@
   \fi%
   \gre@debugmsg{annotation}{Width check completed.}%
   % Now compute the raise
-  \gre@dimen@temp@five = \dimexpr(\gre@dimen@textlower+\gre@space@dimen@initialraise)\relax%
+  \gre@dimen@temp@five = \dimexpr(\gre@space@dimen@spacebeneathtext+\gre@space@dimen@initialraise)\relax%
   \ifnum\gre@count@initialposition=0\relax
     \advance\gre@dimen@temp@five by 
       \dimexpr(\gre@dimen@staffheight
       + \gre@space@dimen@spacebeneathtext
-      + \gre@dimen@currenttranslationheight
-      + \gre@space@dimen@spacelinestext
-      + \gre@dimen@additionalbottomspace)\relax%
+      + \gre@space@dimen@spacelinestext)\relax%
   \fi % post_linebreak takes care of the other cases
   \ifcase\gre@count@initialanchor\relax
     % top
@@ -665,24 +644,6 @@
 %% macro for putting text above lines for annotations and the like
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% set space above the text lines - almost the same as for the translation
-\def\gre@addspaceabove{%
-  \gre@trace{gre@addspaceabove}%
-  \gre@style@abovelinestext%
-  \global\gre@dimen@currentabovelinestextheight=\gre@space@dimen@abovelinestextheight\relax%
-  \endgre@style@abovelinestext%
-  \relax %
-  \gre@trace@end%
-}%
-
-% we don't need space above any more
-\def\gre@removespaceabove{%
-  \gre@trace{gre@removespaceabove}%
-  \global\gre@dimen@currentabovelinestextheight=0 sp%
-  \relax %
-  \gre@trace@end%
-}%
-
 % the code is a bit strange here: we always execute \gre@space@skip@spaceabovelines at the beginning of a glyph. This will:
 % - typeset the text above the lines if relevant, and making sure we execute it only once
 % - not do anything else
@@ -718,22 +679,18 @@
   \gre@debugmsg{spacing}{Raise alt text: \gre@space@dimen@abovelinestextraise}%
   \endgre@style@abovelinestext%
   \ifnum#2=0\relax%
-    \gre@dimen@temp@five=\gre@dimen@additionaltopspacealt\relax%
+    \gre@attr@part=6\relax
   \else%
-    \gre@dimen@temp@five=\gre@dimen@additionaltopspacenabc\relax%
+    \gre@attr@part=7\relax
   \fi%
   \gre@dimen@temp@five=\dimexpr(\gre@dimen@staffheight %
     + \gre@dimen@interstafflinespace %
     + \gre@space@dimen@spacebeneathtext %
-    + \gre@dimen@currenttranslationheight %
     + \gre@space@dimen@spacelinestext %
-    + \gre@dimen@additionalbottomspace %
-    + \gre@dimen@temp@five %
     + \gre@space@dimen@abovelinestextraise)\relax%
-  \gre@mark@abovelinestext %
   \gre@debugmsg{spacing}{Raise alt text: \the\gre@dimen@temp@five}%
-    \leavevmode\raise\gre@dimen@temp@five\hbox to 0pt{\gre@style@abovelinestext#1\endgre@style@abovelinestext\hss}%
-  \relax %
+  \leavevmode\raise\gre@dimen@temp@five\hbox to 0pt{\gre@style@abovelinestext#1\endgre@style@abovelinestext\hss}%
+  \unsetluatexattribute{\gre@attr@part}%
   \gre@trace@end%
 }%
 
@@ -775,7 +732,7 @@
   \setbox\gre@box@lines=\hbox to 0pt{%
     \vbox attr \gre@attrid@part=2 {% width will be adjusted in Lua
       \gre@style@normalstafflines%
-      \vskip\glueexpr(\gre@dimen@additionaltopspace+\gre@space@skip@spaceabovelines+\gre@dimen@currentabovelinestextheight)\relax%
+      \vskip\gre@space@skip@spaceabovelines\relax%
       \gre@count@temp@one=0\relax
       \loop
         \ifgre@showlines %
@@ -787,7 +744,7 @@
         \ifnum\gre@count@temp@one<\gre@count@stafflines
           \kern\gre@dimen@interstafflinespace\relax
         \repeat
-      \kern\dimexpr(\gre@space@dimen@spacelinestext+\gre@dimen@additionalbottomspace+\gre@space@dimen@spacebeneathtext+\gre@dimen@currenttranslationheight)\relax%
+      \kern\dimexpr(\gre@space@dimen@spacelinestext+\gre@space@dimen@spacebeneathtext)\relax%
       \endgre@style@normalstafflines %
     }%
     \hss%
@@ -914,13 +871,11 @@
     \ifgre@translationcentering %
       \setbox\gre@box@temp@width=\hbox{#1}%
       \gre@dimen@temp@five=\dimexpr((\wd\gre@box@syllabletext - \wd\gre@box@temp@width) / 2)\relax%
-      \gre@mark@translation %
       \kern\gre@dimen@temp@five %
-      \raise\gre@space@dimen@spacebeneathtext\hbox to 0pt{\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}}%
+      \raise\gre@space@dimen@spacebeneathtext\hbox attr \gre@attrid@part=5 to 0pt{\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}}%
       \kern-\gre@dimen@temp@five %
     \else %
-      \gre@mark@translation %
-      \raise\gre@space@dimen@spacebeneathtext\hbox to 0pt{\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}}%
+      \raise\gre@space@dimen@spacebeneathtext\hbox attr \gre@attrid@part=5 to 0pt{\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}}%
     \fi %
   \fi%
 }%
@@ -931,8 +886,7 @@
       \GreBeginNLBArea{0}{1}%
     \fi %
     \gre@attr@center=1\relax %
-    \gre@mark@translation %
-    \raise\gre@space@dimen@spacebeneathtext\hbox to 0pt{\kern 0pt\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}\kern 0pt}%
+    \raise\gre@space@dimen@spacebeneathtext\hbox attr \gre@attrid@part=5 to 0pt{\kern 0pt\vbox to 0pt{\vss\hbox to 0pt{\gre@style@translation#1\endgre@style@translation\hss}}\kern 0pt}%
     \unsetluatexattribute{\gre@attr@center}%
     \relax %
   \fi%
@@ -1022,7 +976,6 @@
   \or % 1
     \gre@error{Invalid number of staff lines}%
   \or % 2
-    \let\gre@pitch@adjust@top\gre@pitch@f %
     \let\gre@pitch@abovestaff\gre@pitch@g %
     \let\gre@pitch@ledger@above\gre@pitch@h %
     \let\gre@pitch@raresign\gre@pitch@g %
@@ -1042,7 +995,6 @@
     \let\gre@char@bar@divisiomaiordotted\GreCPDivisioMaiorDottedTwo %
     \let\gre@char@bar@divisiomaiordottedbacking\GreCPDivisioMaiorDottedBackingTwo %
   \or % 3
-    \let\gre@pitch@adjust@top\gre@pitch@h %
     \let\gre@pitch@abovestaff\gre@pitch@i %
     \let\gre@pitch@ledger@above\gre@pitch@j %
     \let\gre@pitch@raresign\gre@pitch@i %
@@ -1062,7 +1014,6 @@
     \let\gre@char@bar@divisiomaiordotted\GreCPDivisioMaiorDottedThree %
     \let\gre@char@bar@divisiomaiordottedbacking\GreCPDivisioMaiorDottedBackingThree %
   \or % 4
-    \let\gre@pitch@adjust@top\gre@pitch@j %
     \let\gre@pitch@abovestaff\gre@pitch@k %
     \let\gre@pitch@ledger@above\gre@pitch@l %
     \let\gre@pitch@raresign\gre@pitch@k %
@@ -1082,7 +1033,6 @@
     \let\gre@char@bar@divisiomaiordotted\GreCPDivisioMaiorDottedFour %
     \let\gre@char@bar@divisiomaiordottedbacking\GreCPDivisioMaiorDottedBackingFour %
   \or % 5
-    \let\gre@pitch@adjust@top\gre@pitch@l %
     \let\gre@pitch@abovestaff\gre@pitch@m %
     \let\gre@pitch@ledger@above\gre@pitch@n %
     \let\gre@pitch@raresign\gre@pitch@m %
@@ -1109,10 +1059,10 @@
 
 %macro called at the beginning of a score
 % #1 is the gabc score id
-% #2 is the high height
-% #3 is the low height
-% #4 is 1 if there is a translation somewhere
-% #5 is if 1 if we have space above the staff
+% #2 is the high height (DEPRECATED)
+% #3 is the low height (DEPRECATED)
+% #4 is 1 if there is a translation somewhere (DEPRECATED)
+% #5 is if 1 if we have space above the staff (DEPRECATED)
 % #6 is the point-and-click filename
 % #7 is the number of staff lines
 % #8 is to set the initial clef position
@@ -1123,11 +1073,8 @@
   \global\gre@dimen@morawidth=0pt\relax %
   \GreResetEolCustos%
   \gre@resetledgerlineheuristics%
-  \global\setluatexattribute\gre@attr@glyph@id{0}%
   \global\setluatexattribute\gre@attr@syllable@id{0}%
   \global\setluatexattribute\gre@attr@alteration@id{0}%
-  \let\gre@pitch@cleftop\gre@pitch@dummy %
-  \let\gre@pitch@clefbottom\gre@pitch@dummy %
   \xdef\gre@gabcname{#6}%
   \gre@setstafflines{#7}%
   \ifnum\gre@count@lastline=0\relax
@@ -1142,14 +1089,9 @@
   \gre@attr@dash=0\relax %
   \gre@generatelines %
   \noindent%
-  \gre@calculate@additionalspaces{#2}{#3}{#4}{#5}%
+  \gre@calculate@additionalspaces
   #8%
-  \directlua{
-    gregoriotex.at_score_beginning([[#1]], #2, #3, #4, #5,
-        \gre@pitch@adjust@top, \gre@pitch@adjust@bottom,
-        "\luatexluaescapestring{\gre@gregoriofontname}")
-    gregoriotex.adjust_line_height(1)
-  }%
+  \directlua{gregoriotex.at_score_beginning([[#1]])}%
   %TODO do something like LaTeX's AtBeginDocument
   \ifdefined\optgabcAtScoreBeginning %
     \optgabcAtScoreBeginning %
@@ -1179,9 +1121,6 @@
   % with some versions of LuaTeX, the \localrightbox and \localleftbox must be set empty in an environment with the good attributes set
   \gre@localleftbox{}%
   \gre@localrightbox{}%
-  \gre@calculate@additionalspaces{\gre@pitch@dummy}{\gre@pitch@dummy}{0}{0}%
-  \global\gre@dimen@currentabovelinestextheight=0 sp%
-  \gre@removetranslationspace %
   \gre@restorepenalties %
   \gre@dimen@temp@one=0pt\relax%
   \gre@dimen@temp@two=0pt\relax%
@@ -1195,7 +1134,6 @@
   \setbox\gre@box@annotation=\box\voidb@x%
   \setbox\gre@box@commentary=\box\voidb@x%
   \directlua{gregoriotex.at_score_end()}%
-  \unsetluatexattribute{\gre@attr@glyph@id}%
   \unsetluatexattribute{\gre@attr@glyph@top}%
   \unsetluatexattribute{\gre@attr@glyph@bottom}%
   \unsetluatexattribute{\gre@attr@dash}%
@@ -1203,7 +1141,6 @@
   \ifnum\gre@count@lastline=0\relax
     \parfillskip=\gre@saved@parfillskip\relax%
   \fi %
-  \global\setluatexattribute\gre@attr@glyph@id{0}%
   \relax%
 }%
 

@@ -5,6 +5,8 @@ As of v3.0.0 this project adheres to [Semantic Versioning](http://semver.org/). 
 ## [Unreleased][CTAN]
 ### Added
 - Added new option `\gresetlastline{trimmed}`, which sets the last line ragged and also trims the staff lines. See [#1418](https://github.com/gregorio-project/gregorio/issues/1418).
+### Changed
+- Variable line heights are now computed in one pass instead of two. Per-line adjustments using `\grechangenextscorelinedim` and `\grechangenextscorelinecount` are also done in one pass, but only work on dimensions/counts related to line heights.
 
 ## [6.1.0] - 2025-02-28
 ### Fixed
