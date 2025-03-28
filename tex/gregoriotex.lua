@@ -857,40 +857,26 @@ local function post_linebreak(h, groupcode, glyphes)
   
   -- we explore the lines
   for line in traverse(h) do
-    -- Remove a line if it has two or fewer hboxes (one for the stafflines, one for the clef)
-    -- Exception: Don't remove the first line
-    if line.id == glue then
-      if line.next ~= nil and line.next.id == hlist
-          and has_attribute(line.next, dash_attr)
-          and linenum > 0 and count(hlist, line.next.head) <= 2 then
-        debugmessage('linesglues', 'deleting glue above empty line')
-        h, line = remove(h, line)
-      end
-    elseif line.id == hlist and has_attribute(line, dash_attr) then
-      if linenum > 0 and count(hlist, line.head) <= 2 then
-        debugmessage('linesglues', 'deleting empty line')
-        h, line = remove(h, line)
-      else
-        linenum = linenum + 1
-        debugmessage('linesglues', 'line %d: %s factor %.0f%%', linenum, glue_sign_name[line.glue_sign], line.glue_set*100)
-        centerstartnode = nil
+    if line.id == hlist and has_attribute(line, dash_attr) then
+      linenum = linenum + 1
+      debugmessage('linesglues', 'line %d: %s factor %.0f%%', linenum, glue_sign_name[line.glue_sign], line.glue_set*100)
+      centerstartnode = nil
 
-        for n in traverse_id(hlist, line.head) do
-          syl_id = has_attribute(n, syllable_id_attr) or syl_id
-          if has_attribute(n, center_attr, startcenter) then
-            centerstartnode = n
-          elseif has_attribute(n, center_attr, endcenter) then
-            if not centerstartnode then
-              warn("End of a translation centering area encountered on a\nline without translation centering beginning,\nskipping translation...")
-            else
-              center_translation(centerstartnode, n, line.glue_set, line.glue_sign, line.glue_order)
-            end
+      for n in traverse_id(hlist, line.head) do
+        syl_id = has_attribute(n, syllable_id_attr) or syl_id
+        if has_attribute(n, center_attr, startcenter) then
+          centerstartnode = n
+        elseif has_attribute(n, center_attr, endcenter) then
+          if not centerstartnode then
+            warn("End of a translation centering area encountered on a\nline without translation centering beginning,\nskipping translation...")
+          else
+            center_translation(centerstartnode, n, line.glue_set, line.glue_sign, line.glue_order)
           end
         end
+      end
 
-        if new_score_last_syllables and syl_id then
-          new_score_last_syllables[syl_id] = syl_id
-        end
+      if new_score_last_syllables and syl_id then
+        new_score_last_syllables[syl_id] = syl_id
       end
     end
   end

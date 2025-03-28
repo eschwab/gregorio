@@ -266,11 +266,18 @@
     \ifnum\gre@insidediscretionary=0\relax %
       \gre@updateleftbox %
     \fi %
-    \ifnum#1=1\relax %
-      \GreNoBreak %
-      \hfill %
-    \fi %
-    \gre@penalty{-10001}%
+    % If this is the last element, just end the paragraph here, ignoring #1
+    % and letting \gre@count@lastline determine justification of the last line.
+    \ifgre@endofscore
+      \par
+    % Otherwise, force a line break
+    \else
+      \ifnum#1=1\relax
+        \GreNoBreak
+        \hfill
+      \fi
+      \gre@penalty{-10001}%
+    \fi
   \fi %
   %%
   \GreResetEolCustos\relax %
@@ -1113,7 +1120,6 @@
   \ifgre@keeprightbox\else %
     \gre@localrightbox{}%
   \fi %
-  \hfil %
   \par %
   \ifgre@keeprightbox%
     \global\gre@keeprightboxfalse%
@@ -1194,9 +1200,6 @@
 
 % called at element level, before the final element
 \def\GreLastOfScore{%
-  %\gre@localleftbox{}% For an unknown reason, if I uncomment this line, the
-  %blank line removing algorithm (in lua) will let some blank space after the
-  %last line... (see bug #20953)
   \global\gre@endofscoretrue %
   \GreSuppressEolCustos%
   \gre@debugmsg{eolshift}{set lastoflinecount to 1}%
