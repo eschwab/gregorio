@@ -1472,8 +1472,15 @@
 }%
 
 \def\grechangecount#1#2{%
-  \expandafter\csname gre@space@count@#1\endcsname=#2%
-  \relax %
+  \IfStrEqCase{#1}{% DEPRECATED
+    {finalpenalty}{\gre@warning{The count 'finalpenalty' no longer has any effect and will be removed in a future release}}% DEPRECATED
+  }[% DEPRECATED
+    \ifcsname gre@space@count@#1\endcsname
+      \expandafter\csname gre@space@count@#1\endcsname=#2\relax
+    \else
+      \gre@error{Unknown count '#1'}%
+    \fi
+  ]% DEPRECATED
 }
 
 % The common internals for \grecreatedim and \grechangedim.

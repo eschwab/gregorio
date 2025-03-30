@@ -4,6 +4,10 @@ This file contains instructions to upgrade to a new release of Gregorio.  These 
 
 ## [Unreleased][develop]
 
+## [Unreleased][CTAN]
+
+- The count `grefinalpenalty` no longer has any effect and will be removed in a future release.
+
 ## 6.1
 
 ### Multiline initials
