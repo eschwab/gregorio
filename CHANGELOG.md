@@ -8,6 +8,7 @@ As of v3.0.0 this project adheres to [Semantic Versioning](http://semver.org/). 
 ### Changed
 - Variable line heights are now computed in one pass instead of two. Per-line adjustments using `\grechangenextscorelinedim` and `\grechangenextscorelinecount` are also done in one pass, but only work on dimensions/counts related to line heights.
 - Previously, if a score ended with `Z` (ragged line break) or `z` (justified line break), the option `\gresetlastline` was ignored; now, a final `Z` or `z` is ignored, and `\gresetlastline` determines whether the last line is ragged, justified, or trimmed.
+### Deprecated
 - The count `grefinalpenalty` no longer has any effect and will be removed in a future release.
 
 ## [6.1.0] - 2025-02-28
