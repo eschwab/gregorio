@@ -5,9 +5,11 @@ As of v3.0.0 this project adheres to [Semantic Versioning](http://semver.org/). 
 ## [Unreleased][CTAN]
 ### Added
 - Added new option `\gresetlastline{trimmed}`, which sets the last line ragged and also trims the staff lines. See [#1418](https://github.com/gregorio-project/gregorio/issues/1418).
+
 ### Changed
 - Variable line heights are now computed in one pass instead of two. Per-line adjustments using `\grechangenextscorelinedim` and `\grechangenextscorelinecount` are also done in one pass, but only work on dimensions/counts related to line heights.
 - Previously, if a score ended with `Z` (ragged line break) or `z` (justified line break), the option `\gresetlastline` was ignored; now, if `Z` is used with `\gresetlastline{justified}` or `z` is used with `\gresetlastline{ragged}` or `\gresetlastline{trimmed}`, a warning is printed; in a future release, this will be an error.
+
 ### Deprecated
 - The count `grefinalpenalty` no longer has any effect and will be removed in a future release.
 
