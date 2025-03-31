@@ -269,6 +269,18 @@
     % If this is the last element, just end the paragraph here, ignoring #1
     % and letting \gre@count@lastline determine justification of the last line.
     \ifgre@endofscore
+      \ifcase#1\relax
+        \ifcase\gre@count@lastline
+          \or
+            \gre@warning{Justified line break 'z' at end of score clashes with \protect\gresetlastline{ragged}.\MessageBreak Setting last line ragged; in a future release, this will be an error.}%
+          \or
+            \gre@warning{Justified line break 'z' at end of score clashes with \protect\gresetlastline{trimmed}.\MessageBreak Setting last line trimmed; in a future release, this will be an error.}%
+        \fi
+      \or
+        \ifcase\gre@count@lastline
+            \gre@warning{Ragged line break 'Z' at end of score clashes with \protect\gresetlastline{justified}.\MessageBreak Setting last line justified; in a future release, this will be an error.}%
+        \fi
+      \fi
       \par
     % Otherwise, force a line break
     \else
