@@ -270,16 +270,9 @@
     % and letting \gre@count@lastline determine justification of the last line.
     \ifgre@endofscore
       \ifcase#1\relax
-        \ifcase\gre@count@lastline
-          \or
-            \gre@warning{Justified line break 'z' at end of score clashes with \protect\gresetlastline{ragged}.\MessageBreak Setting last line ragged; in a future release, this will be an error.}%
-          \or
-            \gre@warning{Justified line break 'z' at end of score clashes with \protect\gresetlastline{trimmed}.\MessageBreak Setting last line trimmed; in a future release, this will be an error.}%
-        \fi
+        \gre@warning{Ignoring forced line break ('z') at end of score.\MessageBreak Please use \protect\gresetlastline{justified} to justify the last line}%
       \or
-        \ifcase\gre@count@lastline
-            \gre@warning{Ragged line break 'Z' at end of score clashes with \protect\gresetlastline{justified}.\MessageBreak Setting last line justified; in a future release, this will be an error.}%
-        \fi
+        \gre@warning{Ignoring forced line break ('Z') at end of score.\MessageBreak Please use \protect\gresetlastline{ragged} to set the last line ragged, or \protect\gresetlastline{trimmed} to set the last line ragged and trim the staff lines}%
       \fi
       \par
     % Otherwise, force a line break
