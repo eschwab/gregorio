@@ -108,9 +108,6 @@ Macro to calculate \verb=\gre@dimen@commentarytrueraise=.
 \macroname{\textbackslash gre@calculate@linewidth}{}{gregoriotex-spaces.tex}
 Calculates the line width.  Default is the width of the printable space (\verb=\hsize=).
 
-\macroname{\textbackslash gre@calculate@stafflinewidth}{}{gregoriotex-spaces.tex}
-Calculates the width of the staff lines.  Default is \texttt{linewidth}.
-
 \macroname{\textbackslash gre@calculate@stafflineheight}{}{gregoriotex-spaces.tex}
 Calculates the height (thickness) of the staff lines.  Dependent on \texttt{stafflineheightfactor} and \texttt{gre@factor}.
 
@@ -1822,8 +1819,8 @@ Boolean which indicates if line breaks are prohibited in an \texttt{euouae} area
 \macroname{\textbackslash ifgre@in@euouae}{}{gregoriotex-main.tex}
 Boolean which indicates that we are in an \texttt{euouae} area.
 
-\macroname{\textbackslash ifgre@justifylastline}{}{gregoriotex-main.tex}
-Boolean which indicates that the last line of the score should be justified.
+\macroname{\textbackslash gre@count@lastline}{}{gregoriotex-main.tex}
+Count which indicates that the last line of the score should be justified (0), ragged (1), or trimmed (2).
 
 \macroname{\textbackslash ifgre@showclef}{}{gregoriotex-main.tex}
 Boolean which indicates that the clef should be visible.
