@@ -138,15 +138,6 @@
 %% Global distances
 %%%%%%%%%%%%%%%%%
 
-% stafflinewidth is the width of a line of staff, this can vary, for example at the first line
-\newdimen\gre@dimen@stafflinewidth\relax%
-\def\gre@calculate@stafflinewidth{%
-  \gre@trace{gre@calculate@stafflinewidth}%
-  \gre@dimen@stafflinewidth=\gre@dimen@linewidth\relax%
-  \gre@trace@end%
-}%
-
-
 % linewidth is the width of a line of a score (including the initial)
 \newdimen\gre@dimen@linewidth\relax%
 \def\gre@calculate@linewidth{%
@@ -231,7 +222,6 @@
 %% Note: It used to be that some distance calculating functions called others.  Since this can create problems with circularity if one is not careful, this is no longer the case.  Now all distance calculating functions simply calculate their respective distance.  This means that dependent distances are not necessarily recalculated when an individual distance is recalculated.  This function updates all global calculated distances and in the order needed for the dependencies.
 %% Dependencies:
 %% linewidth: hsize
-%% stafflinewidth: linewidth
 %% stafflineheight: stafflinefactor & gre@factor
 %% interstafflinespace: stafflineheight & gre@factor
 %% stafflinediff: stafflineheight & gre@factor
@@ -240,7 +230,6 @@
 \def\gre@computespaces{%
   \gre@trace{gre@computespaces}%
   \gre@calculate@linewidth%
-  \gre@calculate@stafflinewidth%
   \gre@calculate@stafflineheight%
   \gre@calculate@interstafflinespace%
   \gre@calculate@stafflinediff%
@@ -1483,8 +1472,15 @@
 }%
 
 \def\grechangecount#1#2{%
-  \expandafter\csname gre@space@count@#1\endcsname=#2%
-  \relax %
+  \IfStrEqCase{#1}{% DEPRECATED
+    {finalpenalty}{\gre@warning{The count 'finalpenalty' no longer has any effect and will be removed in a future release}}% DEPRECATED
+  }[% DEPRECATED
+    \ifcsname gre@space@count@#1\endcsname
+      \expandafter\csname gre@space@count@#1\endcsname=#2\relax
+    \else
+      \gre@error{Unknown count '#1'}%
+    \fi
+  ]% DEPRECATED
 }
 
 % The common internals for \grecreatedim and \grechangedim.
@@ -1628,7 +1624,7 @@
 \newcount\gre@space@count@endofsyllablepenalty%
 \newcount\gre@space@count@endafterbarpenalty%
 \newcount\gre@space@count@endafterbaraltpenalty%
-\newcount\gre@space@count@finalpenalty%
+\newcount\gre@space@count@finalpenalty% DEPRECATED
 \newcount\gre@space@count@endofelementpenalty%
 \newcount\gre@space@count@hyphenpenalty%
 \newcount\gre@space@count@brokenpenalty%

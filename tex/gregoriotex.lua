@@ -511,30 +511,33 @@ gregoriotex.module.debugmessage = debugmessage
 -- line width, and adjust them to actually take up the full line
 -- width.
 local function adjust_fullwidth (line)
-  -- Determine line width, ignoring \leftskip
+  -- Determine line width, ignoring \leftskip and \rightskip
+  -- and, optionally, \parfillskip
   local line_width = line.width
   for child in node.traverse(line.head) do
-    if child.id == glue and child.subtype == 8 then
+    if child.id == glue and (
+      child.subtype == 8 -- leftskip
+      or child.subtype == 9 -- rightskip
+      or tex.count['gre@count@lastline'] == 2 and child.subtype == 15 -- parfillskip
+    ) then
       line_width = line_width - node.effective_glue(child, line)
     end
   end
-  debugmessage("stafflines", "line width %spt", line_width/2^16)
+  debugmessage("adjust_fullwidth", "line width %spt", line_width/2^16)
 
   local function visit(cur)
     for child in node.traverse_list(cur.head) do
-      if has_attribute(child, part_attr, part_commentary) then
-        debugmessage("adjust_fullwidth", "commentary width %spt -> %spt", child.width/2^16, line_width/2^16)
-        child.width = line_width
-        local new = node.hpack(child.head, line_width, 'exactly')
-        new.shift = child.shift
-        cur.head = node.insert_before(cur.head, child, new)
-        cur.head = node.remove(cur.head, child)
-      elseif has_attribute(child, part_attr, part_stafflines) then
-        debugmessage("adjust_fullwidth", "staff width %spt -> %spt", child.width/2^16, line_width/2^16)
-        for r in traverse_id(rule, child.head) do
-          r.width = line_width
+      local attr = has_attribute(child, part_attr)
+      if attr == part_commentary or attr == part_stafflines then
+        debugmessage("adjust_fullwidth", "width %spt -> %spt", child.width/2^16, line_width/2^16)
+        if child.id == hlist then
+          local new = node.hpack(child.head, line_width, 'exactly')
+          new.shift = child.shift
+          cur.head = node.insert_before(cur.head, child, new)
+          cur.head = node.remove(cur.head, child)
+        else
+          child.width = line_width
         end
-        child.width = line_width
       else
         visit(child)
       end
@@ -854,39 +857,26 @@ local function post_linebreak(h, groupcode, glyphes)
   
   -- we explore the lines
   for line in traverse(h) do
-    if line.id == glue then
-      if line.next ~= nil and line.next.id == hlist
-          and has_attribute(line.next, dash_attr)
-          and count(hlist, line.next.head) <= 2 then
-        --log("eating glue")
-        h, line = remove(h, line)
-      end
-    elseif line.id == hlist and has_attribute(line, dash_attr) then
-      -- the next two lines are to remove the dumb lines
-      if count(hlist, line.head) <= 2 then
-        --log("eating line")
-        h, line = remove(h, line)
-      else
-        linenum = linenum + 1
-        debugmessage('linesglues', 'line %d: %s factor %.0f%%', linenum, glue_sign_name[line.glue_sign], line.glue_set*100)
-        centerstartnode = nil
+    if line.id == hlist and has_attribute(line, dash_attr) then
+      linenum = linenum + 1
+      debugmessage('linesglues', 'line %d: %s factor %.0f%%', linenum, glue_sign_name[line.glue_sign], line.glue_set*100)
+      centerstartnode = nil
 
-        for n in traverse_id(hlist, line.head) do
-          syl_id = has_attribute(n, syllable_id_attr) or syl_id
-          if has_attribute(n, center_attr, startcenter) then
-            centerstartnode = n
-          elseif has_attribute(n, center_attr, endcenter) then
-            if not centerstartnode then
-              warn("End of a translation centering area encountered on a\nline without translation centering beginning,\nskipping translation...")
-            else
-              center_translation(centerstartnode, n, line.glue_set, line.glue_sign, line.glue_order)
-            end
+      for n in traverse_id(hlist, line.head) do
+        syl_id = has_attribute(n, syllable_id_attr) or syl_id
+        if has_attribute(n, center_attr, startcenter) then
+          centerstartnode = n
+        elseif has_attribute(n, center_attr, endcenter) then
+          if not centerstartnode then
+            warn("End of a translation centering area encountered on a\nline without translation centering beginning,\nskipping translation...")
+          else
+            center_translation(centerstartnode, n, line.glue_set, line.glue_sign, line.glue_order)
           end
         end
+      end
 
-        if new_score_last_syllables and syl_id then
-          new_score_last_syllables[syl_id] = syl_id
-        end
+      if new_score_last_syllables and syl_id then
+        new_score_last_syllables[syl_id] = syl_id
       end
     end
   end
@@ -985,8 +975,7 @@ local function post_linebreak(h, groupcode, glyphes)
   end
 
   --dump_nodes(h)
-  -- due to special cases, we don't return h here (see comments in bug #20974)
-  return true
+  return h
 end
 
 -- In gregoriotex, hyphenation is made by the process function, so TeX hyphenation
